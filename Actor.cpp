@@ -52,7 +52,7 @@ Tunnelman class
 ****************************************/
 // Default constructor
 Tunnelman::Tunnelman() : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0) {
-    
+    setVisible(true);
 }
 
 void Tunnelman::doSomething() {
