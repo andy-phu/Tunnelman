@@ -6,9 +6,9 @@
 #include "Actor.h"
 #include <string>
 
-class Actor;
-class Tunnelman;
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
+class Tunnelman;
+class Earth;
 
 class StudentWorld : public GameWorld
 {
@@ -27,16 +27,20 @@ public:
 
 		// This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
 		// Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-//		decLives();
-//		return GWSTATUS_PLAYER_DIED;
-	
+        //		decLives();
+        //		return GWSTATUS_PLAYER_DIED;
+    
+    virtual void updateDisplayText();
+
+    virtual void digEarth(int, int);
 
     virtual void cleanUp();
     
-    virtual void updateDisplayText();
+    
     
 private:
     Tunnelman* tMan;
+    Earth* earthObjects[64][64];
     GameWorld* gWorld;
 };
 
