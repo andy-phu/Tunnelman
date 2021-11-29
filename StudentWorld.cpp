@@ -58,7 +58,7 @@ int StudentWorld::init(){
 }
 
 int StudentWorld::move(){
-    setGameStatText();
+    // setGameStatText();
     tMan->doSomething();
     
     
