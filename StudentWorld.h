@@ -19,8 +19,8 @@ public:
     virtual int init();
 	
 //		return GWSTATUS_CONTINUE_GAME;
-	
-
+    StudentWorld* getWorld();
+    
     virtual int move();
 
 		// This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
@@ -34,8 +34,8 @@ public:
 	}
 
 private:
-
-    
+    Tunnelman* tMan;
+    StudentWorld* sWorld;
 };
 
 #endif // STUDENTWORLD_H_

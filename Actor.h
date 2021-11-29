@@ -1,6 +1,8 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 #include "GraphObject.h"
+#include "StudentWorld.h"
+
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 // Actor - Abstract base class for all game Objects
@@ -14,6 +16,7 @@ public:
 
     // Destructor
     virtual ~Actor();
+
 };
 
 class Earth : public Actor {
@@ -54,6 +57,8 @@ public:
     virtual void doSomething();
 
     virtual ~Tunnelman();
+    
+
 };
 
 #endif // ACTOR_H_

@@ -1,4 +1,6 @@
 #include "StudentWorld.h"
+#include <string>
+using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
 
@@ -56,7 +58,25 @@ Tunnelman::Tunnelman() : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0) {
 }
 
 void Tunnelman::doSomething() {
-
+    int ch;
+    StudentWorld* sWorld;
+    //student world like to game world to use get key function
+    if(sWorld->getWorld()->getKey(ch) == true){
+        switch(ch){
+            case KEY_PRESS_LEFT:
+                moveTo(getX()-1, getY());
+                break;
+            case KEY_PRESS_RIGHT:
+                moveTo(getX()+1, getY());
+                break;
+            case KEY_PRESS_UP:
+                moveTo(getX(), getY()+1);
+                break;
+            case KEY_PRESS_DOWN:
+                moveTo(getX(), getY()-1);
+                break;
+        }
+    }
 }
 
 // Destructor
