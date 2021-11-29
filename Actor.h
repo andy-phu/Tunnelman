@@ -3,6 +3,7 @@
 #include "GraphObject.h"
 #include "StudentWorld.h"
 
+class StudentWorld; 
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 // Actor - Abstract base class for all game Objects
@@ -13,10 +14,15 @@ public:
 
     // This function serves as the default most action that any game object will perform
     virtual void doSomething() = 0;
+    
+    StudentWorld* world();
 
     // Destructor
     virtual ~Actor();
+    
 
+private:
+    StudentWorld* sWorld;
 };
 
 class Earth : public Actor {

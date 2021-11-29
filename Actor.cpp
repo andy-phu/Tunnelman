@@ -1,4 +1,4 @@
-#include "StudentWorld.h"
+#include "Actor.h"
 #include <string>
 using namespace std;
 
@@ -15,6 +15,10 @@ Actor::Actor(int imageID, int startX, int startY, Direction startDirection, floa
 // Destructor
 Actor::~Actor() {
 
+}
+
+StudentWorld* Actor::world(){
+    return sWorld;
 }
 
 /****************************************
@@ -59,7 +63,7 @@ Tunnelman::Tunnelman() : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0) {
 
 void Tunnelman::doSomething() {
     int ch;
-    StudentWorld* sWorld;
+    StudentWorld* sWorld = world();
     //student world like to game world to use get key function
     if(sWorld->getWorld()->getKey(ch) == true){
         switch(ch){

@@ -6,6 +6,8 @@
 #include "Actor.h"
 #include <string>
 
+class Actor;
+class Tunnelman;
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 class StudentWorld : public GameWorld
@@ -19,7 +21,7 @@ public:
     virtual int init();
 	
 //		return GWSTATUS_CONTINUE_GAME;
-    StudentWorld* getWorld();
+    GameWorld* getWorld();
     
     virtual int move();
 
@@ -32,10 +34,12 @@ public:
 	virtual void cleanUp()
 	{
 	}
-
+    
+    
+    
 private:
     Tunnelman* tMan;
-    StudentWorld* sWorld;
+    GameWorld* gWorld;
 };
 
 #endif // STUDENTWORLD_H_
