@@ -1,59 +1,67 @@
-#ifndef ACTOR_H_
-#define ACTOR_H_
-
+#ifndef ACTOR_H
+#define ACTOR_H
 #include "GraphObject.h"
+#include "StudentWorld.h"
 
+class StudentWorld; 
+
+// Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 // Actor - Abstract base class for all game Objects
 class Actor: public GraphObject {
 public:
-	// Default constructor
-	Actor(int, int, int, Direction, float, unsigned int);
+    // Default constructor
+    Actor(int, int, int, Direction, float, unsigned int);
 
-	// This function serves as the default most action that any game object will perform
-	virtual void doSomething() = 0;
+    // This function serves as the default most action that any game object will perform
+    virtual void doSomething() = 0;
 
-	// Destructor
-	virtual ~Actor();
+    // Destructor
+    virtual ~Actor();
+
 };
 
 class Earth : public Actor {
 public:
-	// Default constructor
-	Earth(int, int, int, Direction, float, unsigned int);
+    // Default constructor
+    Earth(int, int);
 
-	// This function does nothing
-	virtual void doSomething();
+    // This function does nothing
+    virtual void doSomething();
 
-	// Destructor
-	virtual ~Earth();
+    // Destructor
+    virtual ~Earth();
 };
 
 // Humanoid - base class used for all human type objects within the game
 class Humanoid : public Actor {
 public:
-	// Default construtor
-	Humanoid(int, int, int, Direction, float, unsigned int);
+    // Default construtor
+    Humanoid(int, int, int, Direction, float, unsigned int);
 
-	// virtual void doSomething() = 0;	// Leaving this line to signify that we are still inheritting this function as a 
-										//	pure virtual function from Actor
+    // virtual void doSomething() = 0;    // Leaving this line to signify that we are still inheritting this function as a
+                                        //    pure virtual function from Actor
+    //virtual bool pastBoundary() = 0;
+    // bool isAnnoyed() = 0;            // TODO: Will not implement this yet, leaving in to show this is not just going to
+                                        //    be a copy and paste of Actor.
 
-	// bool isAnnoyed() = 0;			// TODO: Will not implement this yet, leaving in to show this is not just going to 
-										//	be a copy and paste of Actor.
-
-	// Destructor
-	virtual ~Humanoid();
+    // Destructor
+    virtual ~Humanoid();
 };
 
 // Tunnelman - Gameobject that will be used for in game character Tunnelman, notice this class is final
-//	meaning that no other classes may inherit from this class.
+//    meaning that no other classes may inherit from this class.
 class Tunnelman : public Humanoid {
 public:
-	//Default constructor
-	Tunnelman(int, int, int, Direction, float, unsigned int);
+    //Default constructor
+    Tunnelman(StudentWorld*);
 
-	virtual void doSomething();
+    virtual void doSomething();
 
-	virtual ~Tunnelman();
+    virtual bool notPastBoundary(int);
+
+    virtual ~Tunnelman();
+private:
+    StudentWorld* fWorld;
+
 };
-
 #endif // ACTOR_H_
