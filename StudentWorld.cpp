@@ -19,7 +19,7 @@ int StudentWorld::init(){
     
     //top of field nullptr
     for (int c = 0; c < 64; c++){
-        for (int r = 59; r < 64; r++){
+        for (int r = 0; r < 64; r++){
             
             earthObjects[c][r] = nullptr;
         }
@@ -58,16 +58,25 @@ int StudentWorld::init(){
 }
 
 int StudentWorld::move(){
-    // setGameStatText();
+    updateDisplayText();
     tMan->doSomething();
-    
-    
     
     return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp() {
     // TODO: Finish code here
+}
+
+void StudentWorld::updateDisplayText() {
+    string displayText;
+
+    displayText = "X: ";
+    displayText += to_string(tMan->getX());
+    displayText += "\tY: ";
+    displayText += to_string(tMan->getY());
+
+    setGameStatText(displayText);
 }
 
 GameWorld* StudentWorld::getWorld(){

@@ -31,11 +31,9 @@ public:
 //		return GWSTATUS_PLAYER_DIED;
 	
 
-	virtual void cleanUp()
-	{
-	}
+    virtual void cleanUp();
     
-    
+    virtual void updateDisplayText();
     
 private:
     Tunnelman* tMan;

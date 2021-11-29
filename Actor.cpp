@@ -95,24 +95,28 @@ void Tunnelman::doSomething() {
 bool Tunnelman::notPastBoundary(int ch) {
     switch (ch) {
     case KEY_PRESS_LEFT:
+        setDirection(left);
         if (getX() - 1 < 0) {
             return false;
         }
 
         break;
     case KEY_PRESS_RIGHT:
-        if (getX() + 1 > 63) {
+        setDirection(right);
+        if (getX() + 1 > 60) {
             return false;
         }
 
         break;
     case KEY_PRESS_UP:
-        if (getY() + 1 > 63) {
+        setDirection(up);
+        if (getY() + 1 > 60) {
             return false;
         }
 
         break;
     case KEY_PRESS_DOWN:
+        setDirection(down);
         if (getY() - 1 < 0) {
             return false;
         }
