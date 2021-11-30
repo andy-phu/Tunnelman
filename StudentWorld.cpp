@@ -93,6 +93,8 @@ void StudentWorld::digEarth(int x, int y) {
         // Dig out any blocks from Tunnelman objects actual X Y point
         delete earthObjects[x][y];
         earthObjects[x][y] = nullptr;
+
+        playSound(SOUND_DIG);
     }
 }
 
@@ -111,7 +113,17 @@ GameWorld* StudentWorld::getWorld(){
     return gWorld;
 }
 
-StudentWorld::~StudentWorld() {}
+StudentWorld::~StudentWorld() {
+    // Delete tunnelman object
+    delete tMan;
+
+    // Delete all remaining earth objects
+    for (int c = 0; c < 64; c++) {
+        for (int r = 0; r < 64; r++) {
+            delete earthObjects[c][r];
+        }
+    }
+}
 
 GameWorld* createStudentWorld(string assetDir)
 {

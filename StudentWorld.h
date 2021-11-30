@@ -30,13 +30,11 @@ public:
         //		decLives();
         //		return GWSTATUS_PLAYER_DIED;
     
-    virtual void updateDisplayText();
-
-    virtual void digEarth(int, int);
-
     virtual void cleanUp();
     
-    
+    virtual void digEarth(int, int);
+
+    virtual void updateDisplayText();
     
 private:
     Tunnelman* tMan;
