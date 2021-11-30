@@ -1,65 +1,57 @@
 #include "Actor.h"
+#include "StudentWorld.h"
 #include <string>
 using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
 
 /****************************************
-Actor class
+Actor Abstract Base Class
 ****************************************/
 // Default constructor
-Actor::Actor(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) : GraphObject(imageID, startX, startY, startDirection, size, depth) {
+Actor::Actor(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) 
+    : GraphObject(imageID, startX, startY, startDirection, size, depth) {
+
     setVisible(true);
     gWorld = tempWorld;
 }
 
+// Returns StudentWorld object which has been passed into our Actor object through arguments
 StudentWorld* Actor::getWorld() {
     return gWorld;
 }
 
 // Destructor
-Actor::~Actor() {
-
-}
+Actor::~Actor() {}
 
 /****************************************
-Earth class
+Earth Class
 ****************************************/
 // Default Constructor
-Earth::Earth(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(TID_EARTH, startX, startY, right, 0.25, 3, tempWorld) {
-    //setVisible(true);
-}
+Earth::Earth(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(TID_EARTH, startX, startY, right, 0.25, 3, tempWorld) {}
 
 // This function does nothing, but we have to set it up due to doSomething in Actor being a pure virtual function
-void Earth::doSomething() {
-
-}
+void Earth::doSomething() {}
 
 // Destructor
-Earth::~Earth() {
-
-}
+Earth::~Earth() {}
 
 /****************************************
-Humanoid class
+Humanoid Abstract Base Class
 ****************************************/
 // Default constructor
-Humanoid::Humanoid(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) : Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {
-
-}
+Humanoid::Humanoid(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) : 
+    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
 
 // Destructor
-Humanoid::~Humanoid() {
-
-}
+Humanoid::~Humanoid() {}
 
 
 /****************************************
-Tunnelman class
+Tunnelman Class
 ****************************************/
 // Default constructor
-Tunnelman::Tunnelman(StudentWorld* tempWorld) : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0, tempWorld) {
-}
+Tunnelman::Tunnelman(StudentWorld* tempWorld) : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0, tempWorld) {}
 
 void Tunnelman::doSomething() {
     int ch;

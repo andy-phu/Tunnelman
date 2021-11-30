@@ -2,7 +2,6 @@
 #define ACTOR_H
 
 #include "GraphObject.h"
-#include "StudentWorld.h"
 
 class StudentWorld; 
 
@@ -45,7 +44,7 @@ public:
     // virtual void doSomething() = 0;    // Leaving this line to signify that we are still inheritting this function as a
                                           //    pure virtual function from Actor
                                        
-    //virtual bool pastBoundary() = 0;
+    /*virtual bool notPastBoundary();*/
     
     // bool isAnnoyed() = 0;            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                         //    be a copy and paste of Actor.
