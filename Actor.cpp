@@ -1,86 +1,160 @@
 #include "Actor.h"
+#include "StudentWorld.h"
 #include <string>
+#include <cstdlib>
 using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
 
 /****************************************
-Actor class
+Actor Abstract Base Class
 ****************************************/
 // Default constructor
-Actor::Actor(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0) : GraphObject(imageID, startX, startY, startDirection, size, depth) {
+Actor::Actor(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) 
+    : GraphObject(imageID, startX, startY, startDirection, size, depth) {
+
+    setVisible(true);
+    gWorld = tempWorld;
+}
+
+// Returns StudentWorld object which has been passed into our Actor object through arguments
+StudentWorld* Actor::getWorld() {
+    return gWorld;
+}
+
+// Destructor
+Actor::~Actor() {}
+
+/****************************************
+Earth Class
+****************************************/
+// Default Constructor
+Earth::Earth(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(TID_EARTH, startX, startY, right, 0.25, 3, tempWorld) {}
+
+// This function does nothing, but we have to set it up due to doSomething in Actor being a pure virtual function
+void Earth::doSomething() {}
+
+// Destructor
+Earth::~Earth() {}
+
+/****************************************
+Humanoid Abstract Base Class
+****************************************/
+// Default constructor
+Humanoid::Humanoid(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) : 
+    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
+
+// Destructor
+Humanoid::~Humanoid() {}
+
+/****************************************
+Protestor Class
+****************************************/
+//Default Constructor
+Protestor::Protestor(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld){
+     hitPoints = 5;
+     leaveTheOil = false; //not in the oil field leave state
+     current_level_number = getWorld() -> getLevel(); //gets current level using getLevel game world function
+     ticksToWait = max (0, 3 - current_level_number/4); //formula found in pdf
+     numSquares = 8 + (rand() % 60); //random number btn 8 and 60
+}
+
+void Protestor::doSomething(){
+    /*If I am facing the Tunnelman and he is next to me,
+    then Shout at the Tunnelman (to annoy him)
+     Else if the Tunnelman is visible via direct line of sight,
+    then Switch direction to face the Tunnelman Move one square in this direction
+     Else if I’m about to run into an obstacle, then
+    Pick a new direction Move one square in this direction
+    Else  Move one square in my current direction*/
+    
     
 }
 
-// Destructor
-Actor::~Actor() {
 
-}
 
-StudentWorld* Actor::world(){
-    return sWorld;
-}
+
+
 
 /****************************************
-Earth class
-****************************************/
-// Default Constructor
-Earth::Earth(int startX, int startY) : Actor(TID_EARTH, startX, startY, right, 0.25, 3) {
-    setVisible(true);
-}
-
-// This function does nothing, but we have to set it up due to doSomething in Actor being a pure virtual function
-void Earth::doSomething() {
-
-}
-
-// Destructor
-Earth::~Earth() {
-
-}
-
-/****************************************
-Humanoid class
+Tunnelman Class
 ****************************************/
 // Default constructor
-Humanoid::Humanoid(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0) : Actor(imageID, startX, startY, startDirection, size, depth) {
-
-}
-
-// Destructor
-Humanoid::~Humanoid() {
-
-}
-
-
-/****************************************
-Tunnelman class
-****************************************/
-// Default constructor
-Tunnelman::Tunnelman() : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0) {
-    setVisible(true);
-}
+Tunnelman::Tunnelman(StudentWorld* tempWorld) : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0, tempWorld) {}
 
 void Tunnelman::doSomething() {
     int ch;
-    StudentWorld* sWorld = world();
-    //student world like to game world to use get key function
-    if(sWorld->getWorld()->getKey(ch) == true){
+
+    // Tunnelman Movement:
+    // Use getWorld to access class StudentWorld, then further access getKey()
+    //  which allows us to read in keyboard input. Then use switch given those inputs
+    if (getWorld()->getKey(ch) == true) {
         switch(ch){
             case KEY_PRESS_LEFT:
-                moveTo(getX()-1, getY());
+                setDirection(left);
+                if (notPastBoundary(KEY_PRESS_LEFT)) {
+                    moveTo(getX() - 1, getY());
+                }
+
                 break;
             case KEY_PRESS_RIGHT:
-                moveTo(getX()+1, getY());
+                setDirection(right);
+                if (notPastBoundary(KEY_PRESS_RIGHT)) {
+                    moveTo(getX() + 1, getY());
+                }
+                
                 break;
             case KEY_PRESS_UP:
-                moveTo(getX(), getY()+1);
+                setDirection(up);
+                if (notPastBoundary(KEY_PRESS_UP)) {
+                    moveTo(getX(), getY() + 1);
+                }
+
                 break;
             case KEY_PRESS_DOWN:
-                moveTo(getX(), getY()-1);
+                setDirection(down);
+                if (notPastBoundary(KEY_PRESS_DOWN)) {
+                    moveTo(getX(), getY() - 1);
+                }
+
                 break;
         }
     }
+
+    // Tunnelman Digging:
+    getWorld()->digEarth(getX(), getY());
+}
+
+// Will tell whether or not the current game object is past our game grid boundaries
+bool Tunnelman::notPastBoundary(int ch) {
+    switch (ch) {
+    case KEY_PRESS_LEFT:
+        if (getX() - 1 < 0) {
+            return false;
+        }
+
+        break;
+    case KEY_PRESS_RIGHT:
+        if (getX() + 1 > 60) {
+            return false;
+        }
+
+        break;
+    case KEY_PRESS_UP:
+        if (getY() + 1 > 60) {
+            return false;
+        }
+
+        break;
+    case KEY_PRESS_DOWN:
+        if (getY() - 1 < 0) {
+            return false;
+        }
+
+        break;
+    };
+
+    return true;
 }
 
 // Destructor

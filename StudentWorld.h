@@ -3,43 +3,48 @@
 
 #include "GameWorld.h"
 #include "GameConstants.h"
-#include "Actor.h"
 #include <string>
+#include <vector>
 
+class Tunnelman;    // Here we only use class forwarding as we don't actually code 
+                    //  the implementation of any classes and the likes and simply
+                    //  need to be able to declare variables, functions, etc. for 
+                    //  use in StudentWorld.cpp. -- Note Line 4 in StudentWorld.cpp
+                    //  for further explanation --
+class Earth;
 class Actor;
-class Tunnelman;
-// Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
+class Protestor;
 
 class StudentWorld : public GameWorld
 {
 public:
-    //simple constructor
+    // Default constructor
 	StudentWorld(std::string assetDir);
-    
-    ~StudentWorld();
     
     virtual int init();
 	
-//		return GWSTATUS_CONTINUE_GAME;
     GameWorld* getWorld();
     
+    void addProtester(int); //might make virtual if you have to add boulders (or any object that requires adding every tick) down the line
+    
     virtual int move();
-
-		// This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
-		// Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-//		decLives();
-//		return GWSTATUS_PLAYER_DIED;
-	
-
-	virtual void cleanUp()
-	{
-	}
     
+    virtual void cleanUp();
     
+    virtual void digEarth(int, int);
+
+    virtual void updateDisplayText();
+
+    // Destructor
+    ~StudentWorld();
     
 private:
     Tunnelman* tMan;
+    Earth* earthObjects[64][64];
     GameWorld* gWorld;
+    Protestor* regPro;
+    std::vector<Actor*> vActors; //keeps track of all actor pointers
+    int ticks = 0;
 };
 
 #endif // STUDENTWORLD_H_
