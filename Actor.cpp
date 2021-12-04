@@ -15,6 +15,19 @@ Actor::Actor(int imageID, int startX, int startY, Direction startDirection, floa
 
     setVisible(true);
     gWorld = tempWorld;
+    dead(false); //all actors start alive
+
+}
+ 
+bool Actor::isActor(int x, int y){
+    if(getX() == x && getY() == y){ //should be able to detect if there is an actor here
+        return true;
+    }
+    return false;
+}
+
+bool Actor::dead(bool status){ //lets the derived classes access if they're dead or alive
+    return status;
 }
 
 // Returns StudentWorld object which has been passed into our Actor object through arguments
@@ -60,18 +73,102 @@ Protestor::Protestor(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, 
 }
 
 void Protestor::doSomething(){
-    /*If I am facing the Tunnelman and he is next to me,
-    then Shout at the Tunnelman (to annoy him)
-     Else if the Tunnelman is visible via direct line of sight,
-    then Switch direction to face the Tunnelman Move one square in this direction
-     Else if I’m about to run into an obstacle, then
-    Pick a new direction Move one square in this direction
-    Else  Move one square in my current direction*/
+    Tunnelman* tMan = nullptr; //prob doesn't work, might have to do a getter for tunnelman class passing in tunnel man pointer
+    
+ 
+    if(ticks / ticksToWait){ //checks if it should be in the resting state, if not do all the checks to do something
+        if(leaveTheOil == true){ //try to leave arena
+            if(getX() == 60 && getY() == 60){ //at the exit point and can therefore leave
+                dead(true); //set status to dead
+            }
+            else{
+                //TODO: dijkstra's to find the exit
+            }
+        }
+        
+        //     Else if the Tunnelman is visible via direct line of sight,
+        //    then Switch direction to face the Tunnelman Move one square in this direction
+        else{ //not trying to leave and all interactions with tunnelman
+            //    If I am facing the Tunnelman and he is next to me,
+            //    then Shout at the Tunnelman (to annoy him)
+            if((abs(getX() - tMan->getX()) < 4) || (abs(getY() - tMan->getY()) < 4)) { //checks for a distance of 4 and facing direction of tMan
+                Direction direction = getDirection();
+                if((direction == left && tMan->getX() < getX()) || (direction == right && tMan->getX() > getX())
+                || (direction == down && tMan->getY() < getY()) || (direction == up && tMan->getY() > getY())) //checks if facing same direction
+                {
+                    if(ticks % 15 == 0 && shout == true){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
+                        getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
+                        //TODO: deduct two hit points from tunnelman
+                        shout = false; //can't shout again for another 15 non resting ticks
+                        return;
+                    }
+                }
+                else if(getX() == tMan->getX() && (abs(getY() - tMan->getY()) > 4)){ //same column but distance > 4
+                    int distance = getY() - tMan->getY();
+                    if(distance < 0){ //when distance is negative tunnelman is above
+                        for(int i = getY(); i < tMan->getY(); i++){ //checks the path from protestor to tunnelman
+                            if(isActor(getX(), i)){ //checks if there is an actor in the way
+                                setDirection(up);
+                                moveTo(getX(), getY() + 1); //takes a step towards him upwards
+                            }
+                        }
+                    }
+                    else{ //tunnelman is below
+                        for(int i = tMan->getY(); i < getY(); i++){ //checks the path from tunnelman to protester
+                            if(isActor(getX(), i)){ //checks if there is an actor in the way
+                                setDirection(down);
+                                moveTo(getX(), getY() - 1); //takes a step towards him downwards
+                            }
+                        }
+                    }
+                    return;
+                }
+                else if(getY() == tMan->getY() && (abs(getX() - tMan->getX()) > 4)){ //same row but distance > 4
+                    int distance = getX() - tMan->getX();
+                    if(distance < 0){ //when distance is negative tunnelman is right
+                        for(int i = getX(); i < tMan->getX(); i++){ //checks the path from protestor to tunnelman
+                            if(isActor(i, getY())){ //checks if there is an actor in the way
+                                setDirection(right);
+                                moveTo(getX() + 1, getY()); //takes a step towards him to the right
+                                numSquares = 0; // forces protestor to pick a new direction/distance to move during its next non resting tik
+                            }
+                        }
+                    }
+                    else{ //tunnelman is left
+                        for(int i = tMan->getX(); i < getX(); i++){ //checks the path from tunnelman to protester
+                            if(isActor(i, getY())){ //checks if there is an actor in the way
+                                setDirection(left);
+                                moveTo(getX() - 1 , getY()); //takes a step towards him to the left
+                                numSquares = 0; // forces protestor to pick a new direction/distance to move during its next non resting tik
+
+                            }
+                        }
+                    }
+                    return;
+                }
+                //code next step 6 here
+            }
+                
+           
+            //     Else if I’m about to run into an obstacle, then
+            //    Pick a new direction Move one square in this direction
+            //    Else  Move one square in my current direction
+        }
+        remainder++;
+    }
+    else{
+        ticks++; //keeps incrementing til the appropriate amt of ticks has elapsed
+        if(ticks % 15 == 0){
+            shout = true; 
+        }
+    }
+    
     
     
 }
 
-
+//Destructor
+Protestor::~Protestor(){}
 
 
 
@@ -158,6 +255,4 @@ bool Tunnelman::notPastBoundary(int ch) {
 }
 
 // Destructor
-Tunnelman::~Tunnelman() {
-
-}
+Tunnelman::~Tunnelman() {}

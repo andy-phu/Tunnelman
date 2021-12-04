@@ -45,6 +45,7 @@ private:
     Protestor* regPro;
     std::vector<Actor*> vActors; //keeps track of all actor pointers
     int ticks = 0;
+   
 };
 
 #endif // STUDENTWORLD_H_

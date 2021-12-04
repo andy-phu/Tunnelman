@@ -17,10 +17,15 @@ public:
 
     virtual StudentWorld* getWorld();
 
+    virtual bool dead(bool);
+    
+    virtual bool isActor(int, int); //checks to see if there is an actor at certain location
+    
     // Destructor
     virtual ~Actor();
 private:
     StudentWorld* gWorld;
+    Actor* actor;
 };
 
 class Earth : public Actor {
@@ -59,7 +64,7 @@ public:
     
     virtual void doSomething();
     
-    virtual bool notPastBoundary(int); //TODO
+    virtual bool notPastBoundary(int); //TODO: .
     
     virtual ~Protestor();
     
@@ -68,7 +73,10 @@ private:
     int numSquares;
     int current_level_number;
     int ticksToWait;
+    int ticks = 0;
     bool leaveTheOil;
+    int remainder = 0;
+    bool shout = true; //can shout in the beginning
     
     
 };
