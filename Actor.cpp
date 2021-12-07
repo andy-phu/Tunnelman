@@ -19,7 +19,7 @@ Actor::Actor(int imageID, int startX, int startY, Direction startDirection, floa
 
 }
  
-bool Actor::isActor(int x, int y){
+bool Actor::isActor(int x, int y){ //TODO: gonna have to check if it's only an earth or boulder step 7 note says protestors can be same block as other protestors and tunnelman
     if(getX() == x && getY() == y){ //should be able to detect if there is an actor here
         return true;
     }
@@ -89,8 +89,7 @@ void Protestor::doSomething(){
         //     Else if the Tunnelman is visible via direct line of sight,
         //    then Switch direction to face the Tunnelman Move one square in this direction
         else{ //not trying to leave and all interactions with tunnelman
-            //    If I am facing the Tunnelman and he is next to me,
-            //    then Shout at the Tunnelman (to annoy him)
+            //if i can see tunnelman
             if((abs(getX() - tMan->getX()) < 4) || (abs(getY() - tMan->getY()) < 4)) { //checks for a distance of 4 and facing direction of tMan
                 Direction direction = getDirection();
                 if((direction == left && tMan->getX() < getX()) || (direction == right && tMan->getX() > getX())
@@ -146,20 +145,102 @@ void Protestor::doSomething(){
                     }
                     return;
                 }
-                //code next step 6 here
             }
-                
-           
-            //     Else if I’m about to run into an obstacle, then
-            //    Pick a new direction Move one square in this direction
-            //    Else  Move one square in my current direction
+            //code next step 6 here: Otherwise, the Regular Protester can’t directly see the Tunnelman an.
+            else{
+                numSquares = numSquares - 1;
+                //step 6
+                if(numSquares <= 0){ //when the reg pro has finished walking numSquares
+                    int randomNum = 0;
+                    int counter = 0; //to make sure the random number doesn't get chosen more than once
+                    while(counter != 4){
+                        randomNum = rand()%4; //chooses number from 0-4
+                        if(randomNum == 1 && isActor(getX(), getY() + 1)){
+                            setDirection(up);
+                            counter++;
+                        }
+                        else if(randomNum == 2 && isActor(getX(), getY() - 1)){
+                            setDirection(down);
+                            counter++;
+                        }
+                        else if(randomNum == 3 && isActor(getX() + 1, getY())){
+                            setDirection(right);
+                            counter++;
+                        }
+                        else if(randomNum == 4 && isActor(getX() - 1, getY())){
+                            setDirection(left);
+                            counter++;
+                        }
+                        else{
+                            cout << "no random number was chosen...this is for debugging" << endl;
+                        }
+                        perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+                    }
+                    
+                }
+                //step 7
+                else{
+                    //checks for interection
+                    if(perpTurn == true){
+                        if(getDirection() == up){ //facing up/down, perp directions: left and right
+                            if(!(isActor(getX() - 1, getY()))){ //if there is not an actor to the left
+                                setDirection(left);
+                            }
+                            else{
+                                setDirection(right);
+                            }
+                            perpTurn = false;
+                        }
+                        else if(getDirection() == right){ //facing right/left, perp directions: down and up
+                            if(!(isActor(getX(), getY() - 1))){ //if there is not an actor to the left
+                                setDirection(down);
+                            }
+                            else{
+                                setDirection(up);
+                            }
+                            perpTurn = false;
+                        }
+                        else{
+                            cout << "no directions viable, so there is a bug somewhere" << endl;
+                        }
+                    }
+                   
+                }
+                numSquares = 8 + (rand() % 60); //random number btn 8 and 60
+                //step 8 & 9
+                if(getDirection() == up){
+                    if(!isActor(getX(), getY() + 1)){
+                        moveTo(getX(), getY() + 1);
+                    }
+                }
+                else if(getDirection() == down){
+                    if(!isActor(getX(), getY() - 1)){
+                        moveTo(getX(), getY() - 1);
+                    }
+                }
+                else if(getDirection() == right){
+                    if(!isActor(getX() + 1, getY())){
+                        moveTo(getX() + 1, getY());
+                    }
+                }
+                else if(getDirection() == left){
+                    if(!isActor(getX() - 1, getY())){
+                        moveTo(getX() - 1, getY());
+                    }
+                }
+                else{
+                    return;
+                }
+            }
         }
-        remainder++;
     }
     else{
         ticks++; //keeps incrementing til the appropriate amt of ticks has elapsed
-        if(ticks % 15 == 0){
+        if(ticks % 15 == 0){ //every 15 reg pro can shout again
             shout = true; 
+        }
+        if(ticks % 200 == 0){ //every 200 reg pro can do a perpendicular turn again
+            perpTurn = true;
         }
     }
     

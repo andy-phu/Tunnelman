@@ -77,7 +77,7 @@ private:
     bool leaveTheOil;
     int remainder = 0;
     bool shout = true; //can shout in the beginning
-    
+    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
     
 };
 
