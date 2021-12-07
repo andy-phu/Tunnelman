@@ -4,6 +4,7 @@
 #include "GraphObject.h"
 
 class StudentWorld; 
+class Tunnelman;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 // Actor - Abstract base class for all game Objects
@@ -17,10 +18,15 @@ public:
 
     virtual StudentWorld* getWorld();
 
+    virtual void setDead();
+
+    virtual bool isDead();
+
     // Destructor
     virtual ~Actor();
 private:
     StudentWorld* gWorld;
+    bool dead;
 };
 
 class Earth : public Actor {
@@ -33,6 +39,18 @@ public:
 
     // Destructor
     virtual ~Earth();
+};
+
+class BarrelOfOil : public Actor {
+public:
+    BarrelOfOil(int, int, Tunnelman*, StudentWorld*);
+    
+    virtual void doSomething();
+
+    virtual ~BarrelOfOil();
+
+private:
+    Tunnelman* playerObj;
 };
 
 // Humanoid - base class used for all human type objects within the game

@@ -1,6 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include <string>
+#include <math.h>
 using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
@@ -14,11 +15,23 @@ Actor::Actor(int imageID, int startX, int startY, Direction startDirection, floa
 
     setVisible(true);
     gWorld = tempWorld;
+
+    // Actors start alive
+    dead = false;
 }
 
 // Returns StudentWorld object which has been passed into our Actor object through arguments
 StudentWorld* Actor::getWorld() {
     return gWorld;
+}
+
+void Actor::setDead() {
+    dead = true;
+    setVisible(false);
+}
+
+bool Actor::isDead() {
+    return dead;
 }
 
 // Destructor
@@ -35,6 +48,36 @@ void Earth::doSomething() {}
 
 // Destructor
 Earth::~Earth() {}
+
+
+/****************************************
+Barrel of oil
+****************************************/
+BarrelOfOil::BarrelOfOil(int startX, int startY, Tunnelman* player, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
+    playerObj = player;
+    setVisible(false);
+}
+
+void BarrelOfOil::doSomething() {
+    // Barrel is no longer on the field, so do nothing
+    if (isDead()) {
+        return;
+    }
+
+    // Barrel is still on the field, do something
+    if (!isVisible() &&  (abs(playerObj->getX() - getX()) <= 4 && abs(playerObj->getY() - getY()) <= 4)) {
+        setVisible(true);
+        return;
+    }
+
+
+    else if (abs(playerObj->getX() - getX()) <= 3 && abs(playerObj->getY() - getY()) <= 3) {
+        setDead();
+        getWorld()->playSound(SOUND_FOUND_OIL);
+    }
+}
+
+BarrelOfOil::~BarrelOfOil() {}
 
 /****************************************
 Humanoid Abstract Base Class
@@ -129,6 +172,4 @@ bool Tunnelman::notPastBoundary(int ch) {
 }
 
 // Destructor
-Tunnelman::~Tunnelman() {
-
-}
+Tunnelman::~Tunnelman() {}

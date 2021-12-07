@@ -26,18 +26,27 @@ int StudentWorld::init(){
     //tunnelman object getting placed in right spot
     tMan = new Tunnelman(this);
 
+    // Setup all oil barrels
+    // TODO: make barrels of oil num actually implement as required 
+    // Set our rand seed to create pseudo random numbers
+    srand(time(0));
+
+    for (int i = 0; i < 4; i++) {
+        vActors.push_back(new BarrelOfOil(rand() % 60,rand() % 60, tMan, this));
+    }
+
     //push a pointer to an eart object into the vector in each array bucket
     //left of mine shaft in mid rows:0-29 cols:0-59
-    for (int c = 0; c < 29; c++){
+    for (int c = 0; c < 30; c++){
         for (int r = 0; r< 59; r++){
-            earthObjects[c][r] = new Earth(c,r, this);
+            earthObjects[c][r] = new Earth(c, r, this);
         }
     }
     
     //right of mine shaft
     for (int c = 34; c < 64; c++){
         for (int r = 0; r< 59; r++){
-            earthObjects[c][r] = new Earth(c,r, this);
+            earthObjects[c][r] = new Earth(c, r, this);
         }
     }
     
@@ -55,6 +64,10 @@ int StudentWorld::move(){
     updateDisplayText();
     tMan->doSomething();
     
+    for (int i = 0; i < vActors.size(); i++) {
+        vActors[i]->doSomething();
+    }
+
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -116,10 +129,10 @@ void StudentWorld::updateDisplayText() {
     string displayText;
 
     // The below code is for debugging purposes:
-    //displayText = "X: ";
-    //displayText += to_string(tMan->getX());
-    //displayText += "\tY: ";
-    //displayText += to_string(tMan->getY());
+    displayText = "X: ";
+    displayText += to_string(tMan->getX());
+    displayText += "\tY: ";
+    displayText += to_string(tMan->getY());
 
     setGameStatText(displayText);
 }
