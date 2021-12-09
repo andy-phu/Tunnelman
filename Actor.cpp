@@ -105,7 +105,7 @@ void Boulder::doSomething(){
             moveTo(getX(), getY() - 1); //keeps moving down each tick
         }
         else{
-            setDead();
+            setDead(); //deletes once it touches another thing
         }
 
     }
