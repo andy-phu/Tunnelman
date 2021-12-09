@@ -14,6 +14,7 @@ class Tunnelman;    // Here we only use class forwarding as we don't actually co
 class Earth;
 class Actor;
 class Protestor;
+class Boulder;
 
 class StudentWorld : public GameWorld
 {
@@ -25,16 +26,26 @@ public:
 	
     GameWorld* getWorld();
     
-    void addProtester(int); //might make virtual if you have to add boulders (or any object that requires adding every tick) down the line
+    bool isEarth(int, int);
+    
+    bool isBoulder(int, int);
+    
+    //Tunnelman* getTMan();
+    
+    //void addProtester(int); //might make virtual if you have to add boulders (or any object that requires adding every tick) down the line
+    
     
     virtual int move();
     
     virtual void cleanUp();
     
     virtual void digEarth(int, int);
-
+    
+    virtual void removeEarth(int, int);
+    
     virtual void updateDisplayText();
-
+    
+    virtual int random(int, int);
     // Destructor
     ~StudentWorld();
     
@@ -42,7 +53,9 @@ private:
     Tunnelman* tMan;
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
-    Protestor* regPro;
+    Boulder* boulder; 
+    //Protestor* regPro;
+    int level;
     std::vector<Actor*> vActors; //keeps track of all actor pointers
     int ticks = 0;
    
