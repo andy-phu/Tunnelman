@@ -26,6 +26,7 @@ public:
     
     virtual bool isActor(int, int); //checks to see if there is an actor at certain location
     
+    
     // Destructor
     virtual ~Actor();
 private:
@@ -66,29 +67,29 @@ public:
     virtual ~Humanoid();
 };
 
-//class Protestor : public Humanoid {
-//public:
-//    //default constructor
-//    Protestor(StudentWorld*, Tunnelman*);
-//    
-//    virtual void doSomething();
-//    
-//    //virtual bool notPastBoundary(int); //TODO: .
-//    
-//    virtual ~Protestor();
-//    
-//private:
-//    int hitPoints;
-//    int numSquares;
-//    int current_level_number;
-//    int ticksToWait;
-//    int ticks = 0;
-//    bool leaveTheOil;
-//    int remainder = 0;
-//    bool shout = true; //can shout in the beginning
-//    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
-//    Tunnelman* tMan;
-//};
+class Protestor : public Humanoid {
+public:
+    //default constructor
+    Protestor(StudentWorld*, Tunnelman*);
+    
+    virtual void doSomething();
+    
+    //virtual bool notPastBoundary(int); //TODO: .
+    
+    virtual ~Protestor();
+    
+private:
+    int hitPoints;
+    int numSquares;
+    int current_level_number;
+    int ticksToWait;
+    int ticks = 0;
+    bool leaveTheOil;
+    int remainder = 0;
+    bool shout = true; //can shout in the beginning
+    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
+    Tunnelman* tMan;
+};
 
 // Tunnelman - Gameobject that will be used for in game character Tunnelman, notice this class is final
 //    meaning that no other classes may inherit from this class.

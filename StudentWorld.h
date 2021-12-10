@@ -26,9 +26,11 @@ public:
 	
     GameWorld* getWorld();
     
+    //FOR BOULDER
     bool isEarth(int, int);
     
     bool isBoulder(int, int);
+    
     
     //Tunnelman* getTMan();
     
@@ -53,9 +55,11 @@ private:
     Tunnelman* tMan;
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
-    Boulder* boulder; 
-    //Protestor* regPro;
+    //FOR BOULDER
+    Boulder* boulder;
     int level;
+    //-------------------------
+    Protestor* regPro;
     std::vector<Actor*> vActors; //keeps track of all actor pointers
     int ticks = 0;
    

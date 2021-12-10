@@ -37,27 +37,27 @@ int StudentWorld::init(){
     
     //push a pointer to an eart object into the vector in each array bucket
     //left of mine shaft in mid rows:0-29 cols:0-59
-    for (int c = 0; c < 29; c++){
-        for (int r = 0; r< 59; r++){
+    for (int c = 0; c < 30; c++){
+        for (int r = 0; r< 60; r++){
             earthObjects[c][r] = new Earth(c,r, this);
         }
     }
     
     //right of mine shaft
     for (int c = 34; c < 64; c++){
-        for (int r = 0; r< 59; r++){
+        for (int r = 0; r< 60; r++){
             earthObjects[c][r] = new Earth(c,r, this);
         }
     }
     
     //earth at the end of mine shaft
-    for (int c = 29; c < 34; c++){
+    for (int c = 29; c < 35; c++){
         for (int r = 0; r< 4; r++){
             earthObjects[c][r] = new Earth(c,r, this);
         }
     }
    
-    
+    //FOR BOULDER FUNCTION
     //places the boulders
     int B = min(level/2 + 2, 9);
     int counter = 0;
@@ -168,6 +168,7 @@ void StudentWorld::digEarth(int x, int y) {
     }
 }
 
+//FOR BOULDER FUNCTION
 void StudentWorld::removeEarth(int x, int y){
     if(earthObjects[x][y] != nullptr){
         delete earthObjects[x][y];
@@ -191,6 +192,7 @@ GameWorld* StudentWorld::getWorld(){
     return gWorld;
 }
 
+//FOR BOULDER FUNCTION
 bool StudentWorld::isEarth(int x, int y){
     if(earthObjects[x][y] == nullptr){ //returns false when it is not equal to earth
         return false;
@@ -200,6 +202,7 @@ bool StudentWorld::isEarth(int x, int y){
     }
 }
 
+//FOR BOULDER FUNCTION
 bool StudentWorld::isBoulder(int x, int y){
     for(int i = 0; i < vActors.size(); i++){
         if(vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y ){ //if it is a boulder with the same coordinates return true
@@ -209,6 +212,9 @@ bool StudentWorld::isBoulder(int x, int y){
     return false;
 }
 
+bool isEarthBoulder{ //checks if there is earth or a bulder in the way
+    
+}
 //Tunnelman* StudentWorld::getTMan(){
 //    return tMan;
 //}
