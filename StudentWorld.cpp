@@ -194,27 +194,39 @@ GameWorld* StudentWorld::getWorld(){
 
 //FOR BOULDER FUNCTION
 bool StudentWorld::isEarth(int x, int y){
-    if(earthObjects[x][y] == nullptr){ //returns false when it is not equal to earth
-        return false;
+    for(int i = 0; i < 4; i++){ //checks four squares of earth
+        if(earthObjects[x+i][y] == nullptr){ //returns false when it is not equal to earth
+            return false;
+        }
     }
-    else{
-        return true;
-    }
+    return true;
 }
 
 //FOR BOULDER FUNCTION
 bool StudentWorld::isBoulder(int x, int y){
     for(int i = 0; i < vActors.size(); i++){
-        if(vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y ){ //if it is a boulder with the same coordinates return true
-            return true;
+        if(vActors[i]->objectType() == "Boulder"){ //if it is a boulder check the four squares
+            for(int j = 0; j < 4; j++){
+                int leftX =vActors[i]->getX() + j;
+                if(leftX == x && vActors[i]->getY() == y ){ //if it is a boulder with the same coordinates
+                    return true;
+                }
+                int rightX = vActors[i]->getX() - j;
+                if(rightX == x && vActors[i]->getY() == y ){ //if it is a boulder with the same coordinates
+                    return true;
+                }
+            }
         }
     }
     return false;
 }
 
-bool isEarthBoulder{ //checks if there is earth or a bulder in the way
-    
-}
+
+//bool StudentWorld::isEarthBoulder(int x, int y){ //checks if there is earth or a bulder in the way
+//    //earth check
+//    if(isEarth()
+//}
+
 //Tunnelman* StudentWorld::getTMan(){
 //    return tMan;
 //}
@@ -234,7 +246,7 @@ bool isEarthBoulder{ //checks if there is earth or a bulder in the way
 //    }
 //}
 
-StudentWorld::~StudentWorld() {
+StudentWorld::~StudentWorld(){
     // Delete tunnelman object
     delete tMan;
 

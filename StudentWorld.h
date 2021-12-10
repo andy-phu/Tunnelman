@@ -36,7 +36,9 @@ public:
     
     //void addProtester(int); //might make virtual if you have to add boulders (or any object that requires adding every tick) down the line
     
-    
+    //For protestor
+    //virtual bool isEarthBoulder(int,int);
+
     virtual int move();
     
     virtual void cleanUp();
