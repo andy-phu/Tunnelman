@@ -151,8 +151,16 @@ public:
     
     // bool isAnnoyed() = 0;            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                         //    be a copy and paste of Actor.
+
+    int getHitPoints();
+
+    void setHitPoints();
+
     // Destructor
     virtual ~Humanoid();
+
+private:
+    int hitPoints;
 };
 
 /****************************************

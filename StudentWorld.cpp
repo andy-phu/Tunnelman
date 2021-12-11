@@ -9,6 +9,11 @@
 using namespace std;
 
 StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
+    // Used for setting up any and all positions of game objects utilizing min
+    // int min;
+    
+    currLife = getLives();
+    level = getLevel();
     // this gives the address of this StudentWorld object
     gWorld = this;
     tMan = nullptr;
@@ -25,18 +30,6 @@ StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
 int StudentWorld::init(){
     //tunnelman object getting placed in right spot
     tMan = new Tunnelman(this);
-
-    level = getLevel();
-
-    // Setup all oil barrels
-    // TODO: make barrels of oil num actually implement as required 
-    // Set our rand seed to create pseudo random numbers
-    srand(time(0));
-
-    for (int i = 0; i < 4; i++) {
-        vActors.push_back(new BarrelOfOil(rand() % 60,rand() % 60, this));
-    }
-
 
     /********************
     Place all earth blocks and tunnel shaft
@@ -62,6 +55,23 @@ int StudentWorld::init(){
             earthObjects[c][r] = new Earth(c,r, this);
         }
     }
+
+    /********************
+    Place all Barrels of Oil
+    ********************/
+    // TODO: make barrels of oil num actually implement as required 
+    // Set our rand seed to create pseudo random numbers
+    // min = min(level / 2 + currLevel, 21);
+    
+
+
+    srand(time(0));
+
+    for (int i = 0; i < min(2 + level, 21); i++) {
+        vActors.push_back(new BarrelOfOil(rand() % 60, rand() % 60, this));
+    }
+
+    
 
     ///********************
     //Place the boulders
@@ -106,17 +116,42 @@ int StudentWorld::init(){
 }
 
 int StudentWorld::move(){
+    // UPDATE THE GAME STATUS LINE //
+
+    // update the display text first as this also updates many of the private variables that the logic below
+    //  may rely on. 
     updateDisplayText();
+    
+    // GIVE EACH ACTOR A CHANCE TO DO SOMETHING // 
     tMan->doSomething();
     
     for (int i = 0; i < vActors.size(); i++) {
         vActors[i]->doSomething();
     }
 
+    // REMOVE NEWLY-DEAD ACCTORS AFTER EACH TICK
+    removeDeadGameObjects();
+
+    // RETURN THE PROPER RESULT
+    if (playerDiedDuringThisTick()) {
+        return GWSTATUS_PLAYER_DIED;
+    }
+
+    // IF THE PLAYER HAS COLLECTED ALL OF THE BARRELS ON THE LEVEL, THEN 
+    //  RETURN THE RESULT THAT THE PLAYER FINISHED THE LEVEL
+    if (numActorObject("BarrelOfOil") == 0) {
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+
+    // THE PLAYER HASN'T COMPLETED THE CURRENT LEVEL AND HASN'T DIED
+    //  LET THEM CONTINUE PLAYING THE CURRENT LEVEL
     return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp() {
+    Actor* temp = nullptr;
+    
     // Delete tunnelman object
     delete tMan;
 
@@ -128,6 +163,45 @@ void StudentWorld::cleanUp() {
             }
         }
     }
+
+    // Delete all remaining vActor objects
+    while (!vActors.empty()) {
+        temp = vActors[0];
+        vActors.erase(vActors.begin());
+        delete temp;
+    }
+}
+
+void StudentWorld::removeDeadGameObjects() {
+    Actor* temp;    // This will hold our object which we are to delete from memory
+    int i = 0;
+    // Search through our actor objects for dead game objects
+    for (int i = 0; i < vActors.size(); i++) {
+        temp = nullptr;
+
+        // Our current actor object is dead
+        if (vActors[i]->isDead()) {
+            temp = vActors[i];
+            vActors.erase(vActors.begin() + i);
+            delete temp;
+
+            // i-- so that we stay on the value we're currently on and don't iterate further
+            //  or else we'll end up skipping objects which we need to delete. 
+            i--;
+        }
+    }
+}
+
+bool StudentWorld::playerDiedDuringThisTick() {
+    // Check to see if our player has either died or lost a life
+    if (getLives() != currLife) {
+        // Update what life we're on
+        currLife = getLives();
+
+        return true;
+    }
+
+    return false;
 }
 
 void StudentWorld::digEarth(int x, int y) {
@@ -223,7 +297,7 @@ int StudentWorld::numActorObject(string objectType) {
 
     for (int i = 0; i < vActors.size(); i++) {
         // Count each time we find an object of type objectType 
-        if (objectType == vActors[i]->objectType() && !vActors[i]->isDead()) {
+        if (objectType == vActors[i]->objectType()/* && !vActors[i]->isDead()*/) {
             count++;
         }
     }
@@ -236,15 +310,17 @@ void StudentWorld::updateDisplayText() {
     
     level = getLevel();
     lives = getLives();
-    // health = getCurrentHealth();
-    // squirts = getSquirtsLeftInSquirtGun();
-    // gold = getPlayerGoldCount();
+    // health = tMan->getCurrentHealth();
+    // squirts = tMan->getSquirtsLeftInSquirtGun();
+    // gold = tMan->getPlayerGoldCount();
     barrelsLeft = numActorObject("BarrelOfOil");
-    // sonar = getPlayerSonarChargeCount();
-    // score = getCurrentScore();
+    // sonar = tMan->getPlayerSonarChargeCount();
+    score = getScore();
 
-    displayText = "Oil Left: ";
-    displayText += to_string(barrelsLeft);
+    displayText = "Lvl: " + to_string(level) + " Lives: " + to_string(lives) + " Oil Left: " + to_string(barrelsLeft) + " Scr: " + to_string(score);
+
+ /*   displayText = "Lvl: " + to_string(level) + " Lives: " + to_string(lives) + " Hlth: " + to_string(health) + "%" + " Wtr: " + to_string(squirts) + 
+        " Gld: " + to_string(gold) + "Oil Left: " + to_string(barrelsLeft) + " Sonar: " + to_string(sonar) + " Scr: " + to_string(score);*/
 
     //// The below code is for debugging purposes:
     //displayText = "X: ";
@@ -276,18 +352,18 @@ GameWorld* createStudentWorld(string assetDir)
 	return new StudentWorld(assetDir);
 }
 
-//// SOURCE: https://stackoverflow.com/questions/7560114/random-number-c-in-some-range/7560151
-//// Range: [min, max]
-//int StudentWorld::random(int min, int max) {
-//    static bool first = true;
-//
-//    if (first) {
-//        // Seeding for the first time only!
-//        srand(time(NULL));
-//        first = false;
-//    }
-//
-//    return min + rand() % ((max + 1) - min);
-//}
+// SOURCE: https://stackoverflow.com/questions/7560114/random-number-c-in-some-range/7560151
+// Range: [min, max]
+int StudentWorld::random(int min, int max) {
+    static bool first = true;
+
+    if (first) {
+        // Seeding for the first time only!
+        srand(time(NULL));
+        first = false;
+    }
+
+    return min + rand() % ((max + 1) - min);
+}
 
 // Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp

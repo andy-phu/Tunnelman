@@ -29,6 +29,10 @@ public:
     
     virtual void cleanUp();
     
+    void removeDeadGameObjects();
+    
+    bool playerDiedDuringThisTick();
+
     virtual void digEarth(int, int);
 
     virtual void removeEarth(int, int);
@@ -45,7 +49,7 @@ public:
 
     virtual void updateDisplayText();
 
-    /*virtual int random(int, int);*/
+    virtual int random(int, int);
 
     // Destructor
     ~StudentWorld();
@@ -56,6 +60,7 @@ private:
     GameWorld* gWorld;
     Boulder* boulder;
 
+    int currLife;
 
     int level;
     int lives;

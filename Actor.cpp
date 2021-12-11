@@ -136,6 +136,7 @@ void BarrelOfOil::doSomething() {
 
     else if (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3) {
         setDead();
+        getWorld()->increaseScore(1000);
         getWorld()->playSound(SOUND_FOUND_OIL);
     }
 }
@@ -269,6 +270,11 @@ void Tunnelman::doSomething() {
                 if (notPastBoundary(KEY_PRESS_DOWN)) {
                     moveTo(getX(), getY() - 1);
                 }
+
+                break;
+
+            case KEY_PRESS_ESCAPE:
+                getWorld()->decLives();
 
                 break;
         }
