@@ -26,15 +26,21 @@ int StudentWorld::init(){
     //tunnelman object getting placed in right spot
     tMan = new Tunnelman(this);
 
+    level = getLevel();
+
     // Setup all oil barrels
     // TODO: make barrels of oil num actually implement as required 
     // Set our rand seed to create pseudo random numbers
     srand(time(0));
 
     for (int i = 0; i < 4; i++) {
-        vActors.push_back(new BarrelOfOil(rand() % 60,rand() % 60, tMan, this));
+        vActors.push_back(new BarrelOfOil(rand() % 60,rand() % 60, this));
     }
 
+
+    /********************
+    Place all earth blocks and tunnel shaft
+    ********************/
     //push a pointer to an eart object into the vector in each array bucket
     //left of mine shaft in mid rows:0-29 cols:0-59
     for (int c = 0; c < 30; c++){
@@ -51,11 +57,50 @@ int StudentWorld::init(){
     }
     
     //earth at the end of mine shaft
-    for (int c = 29; c < 34; c++){
+    for (int c = 30; c < 34; c++){
         for (int r = 0; r< 4; r++){
             earthObjects[c][r] = new Earth(c,r, this);
         }
     }
+
+    ///********************
+    //Place the boulders
+    //********************/
+    //int B = min(level / 2 + 2, 9);
+    //int counter = 0;
+
+    //// Adds the right amt of boulders for each level
+    //while (counter != B) {
+    //    int randX;
+
+    //    do {
+    //        // 0 to 60
+    //        randX = random(0, 60);
+    //    } while (randX == 27 || randX == 28 || randX == 29 || randX == 30 || randX == 31 || randX == 32 || randX == 33);
+
+    //    // 20 to 56
+    //    int randY = random(20, 56);
+
+    //    cout << randX << " " << randY << endl;
+
+    //    // Places boulder
+    //    boulder = new Boulder(randX, randY, this);
+
+    //    // Removes earth in a 4x4 square for boulder
+    //    for (int i = 0; i < 4; i++) {
+    //        for (int j = 0; j < 4; j++) {
+    //            removeEarth(randX + i, randY + j);
+    //            //removeEarth(randX + i, randY + j);
+    //            //removeEarth(randX + i, randY + j);
+    //            //removeEarth(randX + i, randY + j);
+    //        }
+    //    }
+
+    //    vActors.push_back(boulder);
+
+    //    counter++;
+    //}
+
 
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -83,8 +128,6 @@ void StudentWorld::cleanUp() {
             }
         }
     }
-    
-
 }
 
 void StudentWorld::digEarth(int x, int y) {
@@ -125,14 +168,89 @@ void StudentWorld::digEarth(int x, int y) {
     }
 }
 
+void StudentWorld::removeEarth(int x, int y) {
+    if (earthObjects[x][y] != nullptr) {
+        delete earthObjects[x][y];
+        earthObjects[x][y] = nullptr;
+    }
+}
+
+
+//bool StudentWorld::isEarth(int x, int y) {
+//    for (int i = 0; i < vActors.size(); i++) {
+//        if (vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y) {
+//            return true;
+//        }
+//    }
+//
+//    return false;
+//}
+//
+//bool StudentWorld::isBoulder(int x, int y) {
+//    for (int i = 0; i < vActors.size(); i++) {
+//        // If it is a boulder withthe same coordinates return true
+//        if (vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y) {
+//            return true;
+//        }
+//    }
+//
+//    return false;
+//}
+
+int StudentWorld::getActorObjectX(string objectType) {
+    if (objectType == tMan->objectType()) {
+        return tMan->getX();
+    }
+
+    //// Search through entire vActors array to look for matches
+    //for (int i = 0; i < vActors.size(); i++) {
+    //    if (objectType == vActors[i]->objectType()) {
+    //        return vActors[i]->getX();
+    //    }
+    //}
+}
+
+int StudentWorld::getActorObjectY(string objectType) {
+    if (objectType == tMan->objectType()) {
+        return tMan->getY();
+    }
+
+
+}
+
+int StudentWorld::numActorObject(string objectType) {
+    int count = 0;
+
+    for (int i = 0; i < vActors.size(); i++) {
+        // Count each time we find an object of type objectType 
+        if (objectType == vActors[i]->objectType() && !vActors[i]->isDead()) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 void StudentWorld::updateDisplayText() {
     string displayText;
+    
+    level = getLevel();
+    lives = getLives();
+    // health = getCurrentHealth();
+    // squirts = getSquirtsLeftInSquirtGun();
+    // gold = getPlayerGoldCount();
+    barrelsLeft = numActorObject("BarrelOfOil");
+    // sonar = getPlayerSonarChargeCount();
+    // score = getCurrentScore();
 
-    // The below code is for debugging purposes:
-    displayText = "X: ";
-    displayText += to_string(tMan->getX());
-    displayText += "\tY: ";
-    displayText += to_string(tMan->getY());
+    displayText = "Oil Left: ";
+    displayText += to_string(barrelsLeft);
+
+    //// The below code is for debugging purposes:
+    //displayText = "X: ";
+    //displayText += to_string(tMan->getX());
+    //displayText += "\tY: ";
+    //displayText += to_string(tMan->getY());
 
     setGameStatText(displayText);
 }
@@ -158,5 +276,18 @@ GameWorld* createStudentWorld(string assetDir)
 	return new StudentWorld(assetDir);
 }
 
+//// SOURCE: https://stackoverflow.com/questions/7560114/random-number-c-in-some-range/7560151
+//// Range: [min, max]
+//int StudentWorld::random(int min, int max) {
+//    static bool first = true;
+//
+//    if (first) {
+//        // Seeding for the first time only!
+//        srand(time(NULL));
+//        first = false;
+//    }
+//
+//    return min + rand() % ((max + 1) - min);
+//}
 
 // Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp

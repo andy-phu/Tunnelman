@@ -25,6 +25,10 @@ StudentWorld* Actor::getWorld() {
     return gWorld;
 }
 
+string Actor::objectType() {
+    return "Actor";
+}
+
 void Actor::setDead() {
     dead = true;
     setVisible(false);
@@ -46,15 +50,74 @@ Earth::Earth(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(
 // This function does nothing, but we have to set it up due to doSomething in Actor being a pure virtual function
 void Earth::doSomething() {}
 
+string Earth::objectType() {
+    return "Earth";
+}
+
 // Destructor
 Earth::~Earth() {}
 
+///****************************************
+//Boulder class
+//****************************************/
+//// Default Constructor
+//Boulder::Boulder(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(TID_BOULDER, startX, startY, down, 1.0, 1, tempWorld) {
+//    // Starts at stable state (1), waiting state (2), falling state (3)
+//    state = 1;
+//}
+//
+//string Boulder::objectType() {
+//    return "Boulder";
+//}
+//
+//void Boulder::doSomething() {
+//    if (isDead()) {
+//        return;
+//    }
+//
+//    // Stable state action checks
+//    if (state == 1) {
+//        // If there is earth below boulder
+//        if ((getWorld()->isEarth(getX(), getY() - 1)) && (getWorld()->isEarth(getX() + 1, getY() - 1)) && (getWorld()->isEarth(getX() + 2, getY() - 1)) &&
+//            (getWorld()->isEarth(getX() + 3, getY() - 1))) {
+//            return;
+//        }
+//        // No earth below boulder
+//        else {
+//            // Waiting state
+//            state = 2;
+//        }
+//    }
+//    // Waiting state and 30 ticks have passed
+//    else if (state == 2 && ticks % 30 == 0) {
+//        // Goes to falling state
+//        state = 3;
+//
+//        getWorld()->playSound(SOUND_FALLING_ROCK);
+//    }
+//    // Falling state
+//    else if (state == 3) {
+//        if (getY() != 0 && !getWorld()->isEarth(getX(), getY() - 1) && (!getWorld()->isBoulder(getX(), getY() - 4))) {
+//            // Keeps moving down each tick
+//            moveTo(getX(), getY() - 1);
+//        }
+//        else {
+//            // Deletes once it touches another thing
+//            setDead();
+//        }
+//    }
+//
+//    // Ticks iterates each time
+//    ticks++;
+//}
+//
+//// Destructor
+//Boulder::~Boulder() {}
 
 /****************************************
 Barrel of oil
 ****************************************/
-BarrelOfOil::BarrelOfOil(int startX, int startY, Tunnelman* player, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
-    playerObj = player;
+BarrelOfOil::BarrelOfOil(int startX, int startY, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
     setVisible(false);
 }
 
@@ -65,19 +128,95 @@ void BarrelOfOil::doSomething() {
     }
 
     // Barrel is still on the field, do something
-    if (!isVisible() &&  (abs(playerObj->getX() - getX()) <= 4 && abs(playerObj->getY() - getY()) <= 4)) {
+    if (!isVisible() &&  (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
         setVisible(true);
         return;
     }
 
 
-    else if (abs(playerObj->getX() - getX()) <= 3 && abs(playerObj->getY() - getY()) <= 3) {
+    else if (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3) {
         setDead();
         getWorld()->playSound(SOUND_FOUND_OIL);
     }
 }
 
+string BarrelOfOil::objectType() {
+    return "BarrelOfOil";
+}
+
 BarrelOfOil::~BarrelOfOil() {}
+
+/****************************************
+Squirt Class
+****************************************/
+Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {}
+
+void Squirt::doSomething() {
+
+}
+
+string Squirt::objectType() {
+    return "Squirt";
+}
+
+Squirt::~Squirt() {}
+
+/****************************************
+invenItems Abstract Base Class
+****************************************/
+invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
+    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {
+
+}
+
+int invenItems::getObjectState() {
+    return objectState;
+}
+
+void invenItems::setObjectState(int updatedState) {
+    objectState = updatedState;
+}
+
+invenItems::~invenItems() {}
+
+/****************************************
+GoldNugget Class
+****************************************/
+// Num of states of a gold nugget: 2
+//  - State 0: Pickupable by Tunnelman
+//  - State 1: Picupable by protestors
+GoldNugget::GoldNugget(int startX, int startY, int state, StudentWorld* tempWorld) : invenItems(TID_GOLD, startX, startY, right, 1.0, 2, tempWorld) {
+    setObjectState(state);
+}
+
+void GoldNugget::doSomething() {
+    // Gold nugget is no longer in the field
+    if (isDead()) {
+        return;
+    }
+
+    // State 0:
+    // The nugget is hidden under the earth
+    if (!isVisible() && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
+        setVisible(true);
+        return;
+    }
+
+    // State 0: 
+    // The nugget is going to be picked up by the Tunnelman
+    else if (getObjectState() == 0 && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3)) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+
+        // TODO: Increase players score by ten points!!
+
+        // TODO: Tell Tunnelman Object it received a new nugget in it's inventory
+    }
+
+    /*else if (getObjectState() == 1 &&)*/
+}
+
+GoldNugget::~GoldNugget() {}
 
 /****************************************
 Humanoid Abstract Base Class
@@ -169,6 +308,10 @@ bool Tunnelman::notPastBoundary(int ch) {
     };
 
     return true;
+}
+
+string Tunnelman::objectType() {
+    return "Tunnelman";
 }
 
 // Destructor

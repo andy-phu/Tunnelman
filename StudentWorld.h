@@ -13,6 +13,8 @@ class Tunnelman;    // Here we only use class forwarding as we don't actually co
                     //  for further explanation --
 class Earth;
 class Actor;
+class Boulder;
+
 class StudentWorld : public GameWorld
 {
 public:
@@ -22,14 +24,28 @@ public:
     virtual int init();
 	
     GameWorld* getWorld();
-    
+
     virtual int move();
     
     virtual void cleanUp();
     
     virtual void digEarth(int, int);
 
+    virtual void removeEarth(int, int);
+
+    //bool isEarth(int, int);
+
+    //bool isBoulder(int, int);
+
+    virtual int getActorObjectX(std::string);
+
+    virtual int getActorObjectY(std::string);
+
+    virtual int numActorObject(std::string);
+
     virtual void updateDisplayText();
+
+    /*virtual int random(int, int);*/
 
     // Destructor
     ~StudentWorld();
@@ -38,8 +54,22 @@ private:
     Tunnelman* tMan;
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
+    Boulder* boulder;
 
-    std::vector<Actor*> vActors;    // Keeps track of all actor pointers
+
+    int level;
+    int lives;
+    int health;
+    int squirts;
+    int gold;
+    int barrelsLeft;
+    int sonar;
+    int score;
+
+    // Keeps track of all actor pointers
+    std::vector<Actor*> vActors;
+
+    int ticks = 0;
 };
 
 #endif // STUDENTWORLD_H_
