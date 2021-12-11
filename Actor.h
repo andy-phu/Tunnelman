@@ -18,10 +18,11 @@ public:
 
     virtual StudentWorld* getWorld();
     
+    
     virtual std::string objectType();
 
     virtual void setDead();
-
+    
     virtual bool isDead();
     
     virtual bool isActor(int, int); //checks to see if there is an actor at certain location
@@ -125,5 +126,111 @@ private:
     
 };
 
+
+
+
+/****************************************
+Barrel of oil
+****************************************/
+class BarrelOfOil : public Actor {
+public:
+    BarrelOfOil(int, int, Tunnelman*, StudentWorld*);
+    
+    BarrelOfOil(int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~BarrelOfOil();
+};
+
+/****************************************
+Squirt Class
+****************************************/
+class Squirt : public Actor {
+public:
+    Squirt(int, int, Direction, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~Squirt();
+private:
+    Tunnelman* playerObj;
+    int travelDistance = 4;
+};
+
+/****************************************
+invenItems Abstract Base Class
+****************************************/
+class invenItems : public Actor {
+public:
+    invenItems(int, int, int, Direction, float, unsigned int, StudentWorld*);
+
+    // virtual std::string objectType();
+
+    int getObjectState();
+
+    void setObjectState(int);
+
+    virtual ~invenItems();
+private:
+    // Objects of this type may have multiple types, which can be specified within the derived class itself
+    int objectState = 0;
+};
+
+/****************************************
+GoldNugget Class
+****************************************/
+class GoldNugget : public invenItems {
+public:
+    // Default Constructor
+    GoldNugget(int, int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    // Destructor
+    ~GoldNugget();
+};
+
+/****************************************
+Water Pool
+****************************************/
+class WaterPool : public invenItems {
+public:
+    
+    WaterPool(int, int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~WaterPool();
+
+private:
+    int T; //ticks that a water pool can exist
+    int ticks = 0;
+};
+
+/****************************************
+Sonar Kit
+****************************************/
+class SonarKit : public invenItems {
+public:
+    
+    SonarKit(int, int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~SonarKit();
+
+private:
+    int T; //ticks that a water pool can exist
+    int ticks = 0;
+};
 
 #endif // ACTOR_H_

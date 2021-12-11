@@ -85,10 +85,18 @@ int StudentWorld::init(){
         vActors.push_back(boulder);
     counter++;
     }
-
-
+    
+    
+    
     return GWSTATUS_CONTINUE_GAME;
 }
+
+
+
+
+
+
+
 
 //every tick this is called, thus gotta keep track of the amt of ticks that have occurred and reset once it hits a certain number to keep
 //track when to add a protestor
@@ -102,6 +110,14 @@ int StudentWorld::move(){
 //    if(vActors.size() != P){
 //        addProtester(current_level_number);
 //    }
+    
+    //TODO: SONAR AND WATER GOODIES
+    int G = level*25 + 300; //1 in a G chance that a new water pool or sonar kit goodie will be added to the oil field during
+                          //any particular tick
+    
+    //water goodie added to a random 4x4 spot in the oil field
+    
+    
     
     for (int i = 0; i < vActors.size(); i++) {
             vActors[i]->doSomething();

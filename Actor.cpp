@@ -2,6 +2,7 @@
 #include "StudentWorld.h"
 #include <string>
 #include <cstdlib>
+#include <algorithm>
 using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
@@ -28,6 +29,7 @@ bool Actor::isActor(int x, int y){ //TODO: gonna have to check if it's only an e
     }
     return false;
 }
+
 
 void Actor::setDead() {
     dead = true;
@@ -112,6 +114,170 @@ void Boulder::doSomething(){
     ticks++; //ticks iterates every time
     
 }
+
+///****************************************
+//Barrel of oil
+//****************************************/
+//BarrelOfOil::BarrelOfOil(int startX, int startY, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
+//    setVisible(false);
+//}
+//
+//void BarrelOfOil::doSomething() {
+//    // Barrel is no longer on the field, so do nothing
+//    if (isDead()) {
+//        return;
+//    }
+//
+//    // Barrel is still on the field, do something
+//    if (!isVisible() &&  (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
+//        setVisible(true);
+//        return;
+//    }
+//
+//
+//    else if (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3) {
+//        setDead();
+//        getWorld()->playSound(SOUND_FOUND_OIL);
+//    }
+//}
+//
+//string BarrelOfOil::objectType() {
+//    return "BarrelOfOil";
+//}
+//
+//BarrelOfOil::~BarrelOfOil() {}
+//
+///****************************************
+//Squirt Class
+//****************************************/
+//Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {}
+//
+//void Squirt::doSomething() {
+//
+//}
+//
+//string Squirt::objectType() {
+//    return "Squirt";
+//}
+//
+//Squirt::~Squirt() {}
+//
+///****************************************
+//invenItems Abstract Base Class
+//****************************************/
+//invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
+//    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {
+//
+//}
+//
+//int invenItems::getObjectState() {
+//    return objectState;
+//}
+//
+//void invenItems::setObjectState(int updatedState) {
+//    objectState = updatedState;
+//}
+//
+//invenItems::~invenItems() {}
+//
+///****************************************
+//GoldNugget Class
+//****************************************/
+//// Num of states of a gold nugget: 2
+////  - State 0: Pickupable by Tunnelman
+////  - State 1: Picupable by protestors
+//GoldNugget::GoldNugget(int startX, int startY, int state, StudentWorld* tempWorld) : invenItems(TID_GOLD, startX, startY, right, 1.0, 2, tempWorld) {
+//    setObjectState(state);
+//}
+//
+//void GoldNugget::doSomething() {
+//    // Gold nugget is no longer in the field
+//    if (isDead()) {
+//        return;
+//    }
+//
+//    // State 0:
+//    // The nugget is hidden under the earth
+//    if (!isVisible() && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
+//        setVisible(true);
+//        return;
+//    }
+//
+//    // State 0:
+//    // The nugget is going to be picked up by the Tunnelman
+//    else if (getObjectState() == 0 && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3)) {
+//        setDead();
+//        getWorld()->playSound(SOUND_GOT_GOODIE);
+//
+//        // TODO: Increase players score by ten points!!
+//
+//        // TODO: Tell Tunnelman Object it received a new nugget in it's inventory
+//    }
+//
+//    /*else if (getObjectState() == 1 &&)*/
+//}
+//
+//GoldNugget::~GoldNugget() {}
+
+///****************************************
+//Water Pool Class
+//****************************************/
+WaterPool::WaterPool(int startX, int startY, int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld){
+    setVisible(true);
+    setObjectState(state);
+    int level = getWorld()->getLevel();
+    T = max(100,300-10* level);
+    //TODO: ONLY PICKUPABLE BY TUNNELMAN
+}
+
+void WaterPool::doSomething(){
+    if(isDead()){
+        return;
+    }
+    else if((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() -  getWorld()->getActorObjectY("Tunnelman")) <= 3)) { //when the water pool is within the radius of the tunnelman
+        setDead(); //gets set to dead when the tunnelman interacts with it
+        getWorld->playSound(SOUND_GOT_GOODIE); //waterpool sound
+        //TODO: tell tunnelman that it just received 5 new squirts of water
+        //TODO: Players score increases by 100
+    }
+    else if(ticks == T){ //when the ticks that let the water pool elapse then water pool dies
+        setDead();
+    }
+    
+    ticks++;
+}
+
+WaterPool::~WaterPool(){}
+
+///****************************************
+//Sonar Kit  Class
+//****************************************/
+SonarKit::SonarKit(int startX, int startY, int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld){
+    setVisible(true);
+    setObjectState(state); //temporary state
+    int level = getWorld()->getLevel();
+    T = max(100,300-10* level);
+    //TODO: ONLY PICKUPABLE BY TUNNELMAN
+}
+
+void SonarKit::doSomething(){
+    if(isDead()){
+        return;
+    }
+    else if((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() -  getWorld()->getActorObjectY("Tunnelman")) <= 3)) { //when the water pool is within the radius of the tunnelman
+        setDead(); //gets set to dead when the tunnelman interacts with it
+        getWorld->playSound(SOUND_GOT_GOODIE); //waterpool sound
+        //TODO: tell tunnelman that it just received a sonar kit
+        //TODO: Players score increases by 75
+    }
+    else if(ticks == T){ //when the ticks that let the water pool elapse then water pool dies
+        setDead();
+    }
+    
+    ticks++;
+}
+
+SonarKit::~SonarKit(){}
 
 
 
