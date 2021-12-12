@@ -23,6 +23,8 @@ public:
     
     virtual int init();
 	
+    // Returns a pointer to the current StudentWorld that this function is being
+    //  called from
     GameWorld* getWorld();
 
     virtual int move();
@@ -33,23 +35,31 @@ public:
     
     bool playerDiedDuringThisTick();
 
+    void placeGoldNuggets(int, int, int, StudentWorld*);
+
     virtual void digEarth(int, int);
 
     virtual void removeEarth(int, int);
 
-    //bool isEarth(int, int);
+    bool isEarth(int, int);
 
-    //bool isBoulder(int, int);
+    bool isBoulder(int, int);
 
     virtual int getActorObjectX(std::string);
 
     virtual int getActorObjectY(std::string);
 
+    int actorsInObjectHitBox(int, int, int, int, std::string);
+
     virtual int numActorObject(std::string);
+
+    virtual void inventoryUpdate(int);
+
+    void dealDmg(int, std::string);
 
     virtual void updateDisplayText();
 
-    virtual int random(int, int);
+    virtual int random(int, int, char);
 
     // Destructor
     ~StudentWorld();

@@ -29,11 +29,16 @@ public:
 
     virtual bool isDead();
 
+    int getTick();
+
+    void incrementTick();
+
     // Destructor
     virtual ~Actor();
 private:
     StudentWorld* gWorld;
     bool dead;
+    int tick = 0;
 };
 
 /****************************************
@@ -53,24 +58,27 @@ public:
     virtual ~Earth();
 };
 
-//class Boulder : public Actor {
-//public:
-//    Boulder(int, int, StudentWorld*);
-//
-//    virtual std::string objectType();
-//
-//    virtual void doSomething();
-//
-//    virtual ~Boulder();
-//
-//private:
-//    int state;
-//    int ticks = 0;
-//    Tunnelman* playerObj;
-//};
+/****************************************
+Boulder Class
+****************************************/
+class Boulder : public Actor {
+public:
+    Boulder(int, int, StudentWorld*);
+
+    virtual std::string objectType();
+
+    virtual void doSomething();
+
+    virtual ~Boulder();
+
+private:
+    int state;
+    int ticks = 0;
+    Tunnelman* playerObj;
+};
 
 /****************************************
-Barrel of oil
+Barrel of oil Class
 ****************************************/
 class BarrelOfOil : public Actor {
 public:
@@ -132,8 +140,41 @@ public:
     ~GoldNugget();
 };
 
+/****************************************
+Water Class
+****************************************/
+class WaterPool : public invenItems {
+public:
+    // Default Constructor
+    WaterPool(int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~WaterPool();
+
+private:
+    int level;
+};
 
 
+/****************************************
+Sonar Class
+****************************************/
+class SonarKit : public invenItems {
+public:
+    SonarKit(int, int, StudentWorld*);
+
+    virtual void doSomething();
+
+    virtual std::string objectType();
+
+    virtual ~SonarKit();
+
+private:
+    int level;
+};
 
 /****************************************
 Humanoid Abstract Base Class
@@ -149,12 +190,14 @@ public:
                                        
     /*virtual bool notPastBoundary();*/
     
-    // bool isAnnoyed() = 0;            // TODO: Will not implement this yet, leaving in to show this is not just going to
-                                        //    be a copy and paste of Actor.
+    bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
+                                     //    be a copy and paste of Actor.
 
     int getHitPoints();
 
-    void setHitPoints();
+    // This function will be used to both set default Hit Points value upon spawn
+    //  and also deal dmg to the objects hit points. 
+    void setHitPoints(int);
 
     // Destructor
     virtual ~Humanoid();
@@ -177,10 +220,22 @@ public:
 
     virtual bool notPastBoundary(int);
 
+    virtual int getInventoryCount(int);
+
+    virtual void incrementInventoryCount(int);
+
+    virtual void decrementInventoryCount(int);
+
     virtual std::string objectType();
 
     virtual ~Tunnelman();
 
+private:
+    // The Tunnelman holds 3 items
+    //  - Item 0: Gold
+    //  - Item 1: Water
+    //  - Item 2: Sonar Charges
+    int inventory[3];
 };
 
 #endif // ACTOR_H_

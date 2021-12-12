@@ -1,5 +1,7 @@
 #include "StudentWorld.h"
 #include <string>
+#include <sstream>
+#include <iomanip>
 #include <vector>
 #include "Actor.h"  // We use this in the .cpp file instead of .h file due to wanting the actual implementation of Actor.h
                     //  classes, member functions and the like to be imported into this file for actual use. Due to coding
@@ -62,55 +64,86 @@ int StudentWorld::init(){
     // TODO: make barrels of oil num actually implement as required 
     // Set our rand seed to create pseudo random numbers
     // min = min(level / 2 + currLevel, 21);
-    
-
-
-    srand(time(0));
 
     for (int i = 0; i < min(2 + level, 21); i++) {
-        vActors.push_back(new BarrelOfOil(rand() % 60, rand() % 60, this));
+        int randX = random(0, 60, 'X');
+        int randY = random(20, 56, 'Y');
+
+        vActors.push_back(new BarrelOfOil(randX, randY, this));
     }
 
     
 
-    ///********************
-    //Place the boulders
-    //********************/
-    //int B = min(level / 2 + 2, 9);
-    //int counter = 0;
+    /********************
+    Place the boulders
+    ********************/
+    int B = min(level / 2 + 2, 9);
+    int counter = 0;
 
-    //// Adds the right amt of boulders for each level
-    //while (counter != B) {
-    //    int randX;
+    // Adds the right amt of boulders for each level
+    while (counter != B) {
+        int randX;
 
-    //    do {
-    //        // 0 to 60
-    //        randX = random(0, 60);
-    //    } while (randX == 27 || randX == 28 || randX == 29 || randX == 30 || randX == 31 || randX == 32 || randX == 33);
+        randX = random(0, 60, 'X');
 
-    //    // 20 to 56
-    //    int randY = random(20, 56);
+        // 20 to 56
+        int randY = random(0, 56, 'Y');
 
-    //    cout << randX << " " << randY << endl;
+        cout << randX << " " << randY << endl;
 
-    //    // Places boulder
-    //    boulder = new Boulder(randX, randY, this);
+        // Places boulder
+        boulder = new Boulder(randX, randY, this);
 
-    //    // Removes earth in a 4x4 square for boulder
-    //    for (int i = 0; i < 4; i++) {
-    //        for (int j = 0; j < 4; j++) {
-    //            removeEarth(randX + i, randY + j);
-    //            //removeEarth(randX + i, randY + j);
-    //            //removeEarth(randX + i, randY + j);
-    //            //removeEarth(randX + i, randY + j);
-    //        }
+
+
+        // Removes earth in a 4x4 square for boulder
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                removeEarth(randX + i, randY + j);
+                //removeEarth(randX + i, randY + j);
+                //removeEarth(randX + i, randY + j);
+                //removeEarth(randX + i, randY + j);
+            }
+        }
+
+        vActors.push_back(boulder);
+
+        counter++;
+    }
+
+
+    //// USE FOR TESTING BOULDERS ON BOULDERS
+    //vActors.push_back(new Boulder(35, 56, this));
+
+    //for (int i = 0; i < 4; i++) {
+    //    for (int j = 0; j < 4; j++) {
+    //        removeEarth(35 + i, 56 + j);
+    //        //removeEarth(randX + i, randY + j);
+    //        //removeEarth(randX + i, randY + j);
+    //        //removeEarth(randX + i, randY + j);
     //    }
-
-    //    vActors.push_back(boulder);
-
-    //    counter++;
     //}
 
+    //vActors.push_back(new Boulder(35, 30, this));
+
+    //for (int i = 0; i < 4; i++) {
+    //    for (int j = 0; j < 4; j++) {
+    //        removeEarth(35 + i, 30 + j);
+    //        //removeEarth(randX + i, randY + j);
+    //        //removeEarth(randX + i, randY + j);
+    //        //removeEarth(randX + i, randY + j);
+    //    }
+    //}
+
+    /********************
+    Place gold nuggets
+    ********************/
+    for (int i = 0; i < max(5 - level / 2, 2); i++) {
+        int randX = random(0, 60, 'X');
+        int randY = random(0, 56, 'Y');
+
+        placeGoldNuggets(randX, randY, 0, this);
+    }
 
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -123,10 +156,34 @@ int StudentWorld::move(){
     updateDisplayText();
     
     // GIVE EACH ACTOR A CHANCE TO DO SOMETHING // 
+
+    // TODO: Check that the objects are alive!!
     tMan->doSomething();
     
     for (int i = 0; i < vActors.size(); i++) {
         vActors[i]->doSomething();
+    }
+
+    // SPAWN IN NEW OBJECTS
+    // 1 in G chance
+    int G = level * 25 + 300;
+    if (random(0, G, 'r') == G) {
+        // 4 / 5 chance of water pools
+        if (random(0, 5, 'r') < 5) {
+            int randX = random(0, 64, 'W');
+            int randY = random(0, 64, 'W');
+
+            // There are no earth blocks in the hitbox of where the water pool wishes to
+            //  spawn
+            if (actorsInObjectHitBox(randX, randY, 4, 4, "Earth") == -1) {
+                cout << "Water Spawn Coords: " << randX << " " << randY << endl;
+                vActors.push_back(new WaterPool(randX, randY, this));
+            }
+        }
+        // The num is equal to 5: 1 / 5 chance of Sonar kits
+        else {
+            vActors.push_back(new SonarKit(0, 60, this));
+        }
     }
 
     // REMOVE NEWLY-DEAD ACCTORS AFTER EACH TICK
@@ -200,10 +257,21 @@ bool StudentWorld::playerDiedDuringThisTick() {
 
         return true;
     }
+    else if (tMan->isAnnoyed()) {
+        currLife = getLives();
+        playSound(SOUND_PLAYER_GIVE_UP);
+
+        return true;
+    }
 
     return false;
 }
 
+void StudentWorld::placeGoldNuggets(int startX, int startY, int state, StudentWorld* tempWorld) {
+    vActors.push_back(new GoldNugget(startX, startY, state, tempWorld));
+}
+
+// Utilized for digging in Tunnelman logic
 void StudentWorld::digEarth(int x, int y) {
     // Check if there are any earth blocks within the Tunnelman objects hitbox (4x4 area)
     if (earthObjects[x][y] != nullptr  || earthObjects[x + 1][y + 1] != nullptr ||
@@ -242,6 +310,7 @@ void StudentWorld::digEarth(int x, int y) {
     }
 }
 
+// Utilized by Boulder logic
 void StudentWorld::removeEarth(int x, int y) {
     if (earthObjects[x][y] != nullptr) {
         delete earthObjects[x][y];
@@ -250,46 +319,95 @@ void StudentWorld::removeEarth(int x, int y) {
 }
 
 
-//bool StudentWorld::isEarth(int x, int y) {
-//    for (int i = 0; i < vActors.size(); i++) {
-//        if (vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y) {
-//            return true;
-//        }
-//    }
-//
-//    return false;
-//}
-//
-//bool StudentWorld::isBoulder(int x, int y) {
-//    for (int i = 0; i < vActors.size(); i++) {
-//        // If it is a boulder withthe same coordinates return true
-//        if (vActors[i]->objectType() == "Boulder" && vActors[i]->getX() == x && vActors[i]->getY() == y) {
-//            return true;
-//        }
-//    }
-//
-//    return false;
-//}
+bool StudentWorld::isEarth(int x, int y) {
+    // Check four squares of earth
+    for (int i = 0; i < 4; i++) {
+        // Returns true if any of the one squares below are earth blocks
+        if (earthObjects[x + i][y] != nullptr) {
+            return true;
+        }
+    }
+
+    // Returns false if all earth blocks below are no longer there
+    return false;
+}
+
+bool StudentWorld::isBoulder(int x, int y) {
+    for (int i = 0; i < vActors.size(); i++) {
+        // If it is a boulder check the four squares
+        if (vActors[i]->objectType() == "Boulder") {
+            for (int j = 0; j < 4; j++) {
+                int leftX = vActors[i]->getX() + j;
+                // If it is a boulder with the same coordinates
+                if (leftX == x && vActors[i]->getY() == y) {
+                    return true;
+                }
+
+                int rightX = vActors[i]->getX() - j;
+                // if it is a boulder with the same coordines
+                if (rightX == x && vActors[i]->getY() == y) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
 
 int StudentWorld::getActorObjectX(string objectType) {
     if (objectType == tMan->objectType()) {
         return tMan->getX();
     }
-
-    //// Search through entire vActors array to look for matches
-    //for (int i = 0; i < vActors.size(); i++) {
-    //    if (objectType == vActors[i]->objectType()) {
-    //        return vActors[i]->getX();
-    //    }
-    //}
 }
 
 int StudentWorld::getActorObjectY(string objectType) {
     if (objectType == tMan->objectType()) {
         return tMan->getY();
     }
+}
+
+// -1 is used as false in this case to show that nothing is in the calling objects hitbox
+// Numbers from 0+ are considered either TRUE or can also be used for the position of said object in
+//  calling objects hitbox, so that we may call to the object in our hitbox and properly interact with 
+//  just that unique object. 
+int StudentWorld::actorsInObjectHitBox(int x, int y, int xHitBox, int yHitBox, string objectType) {
+    int vActorPos = -1;
+    if (objectType == "Tunnelman") {
+        if (abs(tMan->getX() - x) <= xHitBox && abs(tMan->getY() - y) <= yHitBox) {
+            return 1;
+        }
+    }
 
 
+    if (objectType == "Earth") {
+        for (int i = 0; i < xHitBox; i++) {
+            if (earthObjects[x + i][y + i] != nullptr) {
+                vActorPos = 1;
+            }
+        }
+
+        // There is an earth object in the calling objects hitbox
+        return vActorPos;
+    }
+
+    else {
+        for (int i = 0; i < vActors.size(); i++) {
+            // Specific type case where boulder may find it's own self object and use that as a comparison
+            //  leading to bugged code
+            if (objectType == "Boulder" && (x == vActors[i]->getX() && y == vActors[i]->getY())) {
+                continue;
+            }
+
+            // If the calling object and the object we are searching for are within range
+            if ((abs(x - vActors[i]->getX()) <= xHitBox && abs(y - vActors[i]->getY() <= yHitBox)) && objectType == vActors[i]->objectType()) {
+                vActorPos = i;
+            }
+        }
+    }
+
+
+    return vActorPos;
 }
 
 int StudentWorld::numActorObject(string objectType) {
@@ -305,30 +423,48 @@ int StudentWorld::numActorObject(string objectType) {
     return count;
 }
 
+void StudentWorld::inventoryUpdate(int item) {
+    tMan->incrementInventoryCount(item);
+}
+
+void StudentWorld::dealDmg(int dmg, string objectType) {
+    if (objectType == "Tunnelman") {
+        tMan->setHitPoints(dmg);
+    }
+    //else if (objectType == "Protestor") {
+
+    //}
+}
+
 void StudentWorld::updateDisplayText() {
-    string displayText;
+    stringstream displayText;
     
     level = getLevel();
     lives = getLives();
     // health = tMan->getCurrentHealth();
-    // squirts = tMan->getSquirtsLeftInSquirtGun();
-    // gold = tMan->getPlayerGoldCount();
+    squirts = tMan->getInventoryCount(1);
+    gold = tMan->getInventoryCount(0);
     barrelsLeft = numActorObject("BarrelOfOil");
-    // sonar = tMan->getPlayerSonarChargeCount();
+    sonar = tMan->getInventoryCount(2);
     score = getScore();
 
-    displayText = "Lvl: " + to_string(level) + " Lives: " + to_string(lives) + " Oil Left: " + to_string(barrelsLeft) + " Scr: " + to_string(score);
 
- /*   displayText = "Lvl: " + to_string(level) + " Lives: " + to_string(lives) + " Hlth: " + to_string(health) + "%" + " Wtr: " + to_string(squirts) + 
-        " Gld: " + to_string(gold) + "Oil Left: " + to_string(barrelsLeft) + " Sonar: " + to_string(sonar) + " Scr: " + to_string(score);*/
+    // Format all text for display using string stream and iomanip
+    // Reference : https://www.cplusplus.com/reference/sstream/stringstream/stringstream/ , Accessed 12/11/2021
+    displayText << "Lvl: " << setw(2) << to_string(level);
+    displayText << "  Lives: " << setw(1) << lives;
+    // displayText << " Hlth " << setw(3) << health << "%";
+    displayText << "  Wtr: " << setw(2) << squirts;
+    displayText << "  Gld: " << setw(2) << gold;
+    displayText << "  Oil Left: " << setw(2) << barrelsLeft;
+    displayText << "  Sonar: " << setw(2) << sonar;
+    displayText << "  Scr: " << setfill('0') << setw(6) << score;
 
     //// The below code is for debugging purposes:
-    //displayText = "X: ";
-    //displayText += to_string(tMan->getX());
-    //displayText += "\tY: ";
-    //displayText += to_string(tMan->getY());
+    //displayText << "X: " << tMan->getX();
+    //displayText << " Y: " << tMan->getY();
 
-    setGameStatText(displayText);
+    setGameStatText(displayText.str());
 }
 
 GameWorld* StudentWorld::getWorld(){
@@ -354,8 +490,9 @@ GameWorld* createStudentWorld(string assetDir)
 
 // SOURCE: https://stackoverflow.com/questions/7560114/random-number-c-in-some-range/7560151
 // Range: [min, max]
-int StudentWorld::random(int min, int max) {
+int StudentWorld::random(int min, int max, char xOrY) {
     static bool first = true;
+    int randNum = 0;
 
     if (first) {
         // Seeding for the first time only!
@@ -363,6 +500,17 @@ int StudentWorld::random(int min, int max) {
         first = false;
     }
 
+    // X-Coord: Ensure we don't spawn any objects in the tunnel shaft
+    if (xOrY == 'X') {
+        do {
+            randNum = min + rand() % ((max + 1) - min);
+        } while (randNum >= 27 && randNum <= 33);
+
+        return randNum;
+    }
+    
+    
+    // Y-coord
     return min + rand() % ((max + 1) - min);
 }
 
