@@ -1,8 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include <string>
-#include <cstdlib>
-#include <algorithm>
+#include <math.h>
 using namespace std;
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
@@ -16,20 +15,19 @@ Actor::Actor(int imageID, int startX, int startY, Direction startDirection, floa
 
     setVisible(true);
     gWorld = tempWorld;
-    dead = false; //all actors start alive
+
+    // Actors start alive
+    dead = false;
 }
 
-string Actor::objectType(){
+// Returns StudentWorld object which has been passed into our Actor object through arguments
+StudentWorld* Actor::getWorld() {
+    return gWorld;
+}
+
+string Actor::objectType() {
     return "Actor";
 }
-
-bool Actor::isActor(int x, int y){ //TODO: gonna have to check if it's only an earth or boulder step 7 note says protestors can be same block as other protestors and tunnelman
-    if(getX() == x && getY() == y){ //should be able to detect if there is an actor here
-        return true;
-    }
-    return false;
-}
-
 
 void Actor::setDead() {
     dead = true;
@@ -40,9 +38,12 @@ bool Actor::isDead() {
     return dead;
 }
 
-// Returns StudentWorld object which has been passed into our Actor object through arguments
-StudentWorld* Actor::getWorld() {
-    return gWorld;
+int Actor::getTick() {
+    return tick;
+}
+
+void Actor::incrementTick() {
+    tick++;
 }
 
 // Destructor
@@ -57,436 +58,325 @@ Earth::Earth(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(
 // This function does nothing, but we have to set it up due to doSomething in Actor being a pure virtual function
 void Earth::doSomething() {}
 
+string Earth::objectType() {
+    return "Earth";
+}
+
 // Destructor
 Earth::~Earth() {}
+
+/****************************************
+Boulder class
+****************************************/
+// Default Constructor
+
+// TODO: MAY NEED TO CHANGE THIS LATER TO MATCH WITH INVEN ITEM LOGIC
+// Num of states of a Boulder: 3
+//  - State 1: Stable state
+//  - State 2: Waiting state
+//  - State 3: Falling state
+Boulder::Boulder(int startX, int startY, StudentWorld* tempWorld = nullptr) : Actor(TID_BOULDER, startX, startY, down, 1.0, 1, tempWorld) {
+    state = 1;
+}
+
+void Boulder::doSomething() {
+    if (isDead()) {
+        return;
+    }
+
+    // Stable state action checks
+    if (state == 1) {
+        // If there is earth below boulder
+        if ((getWorld()->isEarth(getX(), getY() - 1))) {
+            return;
+        }
+        // No earth below boulder
+        else {
+            // Waiting state
+            state = 2;
+        }
+    }
+    // Waiting state and 30 ticks have passed
+    else if (state == 2 && ticks % 30 == 0) {
+        // Goes to falling state
+        state = 3;
+
+        getWorld()->playSound(SOUND_FALLING_ROCK);
+    }
+    // Falling state
+    else if (state == 3) {
+        // Keeps moving down each tick
+        if (getY() != 0 && !getWorld()->isEarth(getX(), getY() - 1) && getWorld()->actorsInObjectHitBox(getX(), getY(), 4, 4, "Boulder") == -1) {
+            moveTo(getX(), getY() - 1);
+        }
+        else if (getWorld()->actorsInObjectHitBox(getX(), getY(), 3, 3, "Tunnelman") != -1) {
+            getWorld()->dealDmg(-100, "Tunnelman");
+        }
+        
+
+
+        else {
+            // Deletes once it touches another thing
+            setDead();
+        }
+    }
+
+    // Ticks iterates each time
+    ticks++;
+}
+
+string Boulder::objectType() {
+    return "Boulder";
+}
+
+// Destructor
+Boulder::~Boulder() {}
+
+/****************************************
+Barrel of oil
+****************************************/
+BarrelOfOil::BarrelOfOil(int startX, int startY, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
+    setVisible(false);
+}
+
+void BarrelOfOil::doSomething() {
+    // Barrel is no longer on the field, so do nothing
+    if (isDead()) {
+        return;
+    }
+
+    // Barrel is still on the field, do something
+    if (!isVisible() &&  (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
+        setVisible(true);
+        return;
+    }
+
+
+    else if (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3) {
+        setDead();
+        getWorld()->increaseScore(1000);
+        getWorld()->playSound(SOUND_FOUND_OIL);
+    }
+}
+
+string BarrelOfOil::objectType() {
+    return "BarrelOfOil";
+}
+
+BarrelOfOil::~BarrelOfOil() {}
+
+/****************************************
+Squirt Class
+****************************************/
+Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {}
+
+void Squirt::doSomething() {
+
+}
+
+string Squirt::objectType() {
+    return "Squirt";
+}
+
+Squirt::~Squirt() {}
+
+/****************************************
+invenItems Abstract Base Class
+****************************************/
+invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
+    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
+
+int invenItems::getObjectState() {
+    return objectState;
+}
+
+void invenItems::setObjectState(int updatedState) {
+    objectState = updatedState;
+}
+
+invenItems::~invenItems() {}
+
+/****************************************
+GoldNugget Class
+****************************************/
+// Num of states of a gold nugget: 2
+//  - State 0: Pickupable by Tunnelman
+//  - State 1: Picupable by protestors
+GoldNugget::GoldNugget(int startX, int startY, int state, StudentWorld* tempWorld) : invenItems(TID_GOLD, startX, startY, right, 1.0, 2, tempWorld) {
+    setVisible(false);
+    setObjectState(state);
+}
+
+void GoldNugget::doSomething() {
+    // Gold nugget is no longer in the field
+    if (isDead()) {
+        return;
+    }
+
+    // State 0:
+    // The nugget is hidden under the earth
+    if (!isVisible() && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
+        setVisible(true);
+        return;
+    }
+
+    // State 0: 
+    // The nugget is going to be picked up by the Tunnelman
+    else if (getObjectState() == 0 && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3)) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+
+        // TODO: Increase players score by ten points!!
+        getWorld()->increaseScore(10);
+
+        // TODO: Tell Tunnelman Object it received a new nugget in it's inventory
+        getWorld()->inventoryUpdate(0);
+    }
+
+    // TODO: Logic for protestors
+    //else if (getObjectState() == 1) {
+
+    //    // If there are protestors then we need to go through each one to see if they are
+    //    //  within the hit box of the gold nugget
+    //    if (getWorld()->numActorObject("Protestors") > 0) {
+    //        vector<
+    //    }
+
+    //}
+
+    // Ensure this is a temporary object which will eventually expire
+    if (getObjectState() == 1) {
+        if (getTick() > 200) {
+            setDead();
+        }
+
+
+        incrementTick();
+    }
+}
+
+GoldNugget::~GoldNugget() {}
+
+/****************************************
+Water Class
+****************************************/
+// Object states do not matter for this class
+WaterPool::WaterPool(int startX, int startY, StudentWorld* tempWorld) : invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld) {
+    level = getWorld()->getLevel();
+}
+
+void WaterPool::doSomething() {
+    if (isDead()) {
+        return;
+    }
+
+    // When the water pool is within the radius of the tunnelman
+    else if ((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() - getWorld()->getActorObjectY("Tunnelman")) <= 3)) {
+        // Gets set to dead when the tunnelman interacts with it
+        setDead();
+
+        // Waterpool sound
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+
+        getWorld()->inventoryUpdate(1);
+
+        getWorld()->increaseScore(100);
+    }
+
+    // When the ticks that left the water pool elapse then water pool dies
+    else if (getTick() == max(100, 300 - 10 * level)) {
+        setDead();
+    }
+
+    // Water pools are temporary objects and are always on a tick timer before despawning
+    incrementTick();
+}
+
+string WaterPool::objectType() {
+    return "WaterPool";
+}
+
+WaterPool::~WaterPool() {}
+
+/****************************************
+Sonar Class
+****************************************/
+// Object states in this class do no matter 
+SonarKit::SonarKit(int startX, int startY, StudentWorld* tempWorld) : invenItems(TID_SONAR, startX, startY, right, 1.0, 2, tempWorld) {
+    level = getWorld()->getLevel();
+}
+
+void SonarKit::doSomething() {
+    if (isDead()) {
+        return;
+    }
+
+    else if ((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() - getWorld()->getActorObjectY("Tunnelman")) <= 3)) {
+        // Gets set to dead when the tunnelman interacts with it
+        setDead();
+
+        // Pick up sound
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+
+        getWorld()->inventoryUpdate(2);
+
+        getWorld()->increaseScore(75);
+    }
+    else if (getTick() == max(100, 300 - 10 * level)) {
+        setDead();
+    }
+
+    // Sonar kits are temporary objects and are always on a tick timer before despawning
+    incrementTick();
+}
+
+string SonarKit::objectType() {
+    return "SonarKit";
+}
+
+SonarKit::~SonarKit() {}
 
 /****************************************
 Humanoid Abstract Base Class
 ****************************************/
 // Default constructor
 Humanoid::Humanoid(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) : 
-    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
+    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {
+    hitPoints = 0;
+}
+
+bool Humanoid::isAnnoyed() {
+    if (hitPoints <= 0) {
+        return true;
+    }
+
+    return false;
+}
+
+int Humanoid::getHitPoints() {
+    return hitPoints;
+}
+
+void Humanoid::setHitPoints(int hp) {
+    hitPoints += hp;
+}
 
 // Destructor
 Humanoid::~Humanoid() {}
-
-/****************************************
-Boulder Class
-****************************************/
-
-Boulder::Boulder(int startX, int startY, StudentWorld* tempWorld): Actor(TID_BOULDER, startX, startY, down, 1.0, 1, tempWorld){
-    setVisible(true);
-    state = 1; //starts at stable state (1), waiting state (2), falling state (3)
-}
-
-string Boulder::objectType(){
-    return "Boulder";
-}
-
-void Boulder::doSomething(){
-    if(isDead()){
-        return;
-    }
-    
-    //stable state action checks
-    if(state == 1){
-        //if there is earth below boulder
-        if((getWorld()->isEarth(getX(), getY()-1))){
-            return;
-        }
-        else{ //no earth below boulder
-            state = 2; //waiting state
-        }
-    }
-    else if (state == 2 && ticks % 30 == 0) { //waiting state and 30 ticks have passed
-        state = 3; //goes to falling state
-        getWorld()->playSound(SOUND_FALLING_ROCK);
-    }
-    else if (state == 3){ //falling state
-        if(getY() != 0 && !getWorld()->isEarth(getX(), getY() -1) && !getWorld()->isBoulder(getX(), getY()-4)){ //keeps moving down each tick
-            moveTo(getX(), getY() - 1);
-        }
-        else{
-            setDead(); //deletes once it touches another thing
-        }
-
-    }
-    ticks++; //ticks iterates every time
-    
-}
-
-///****************************************
-//Barrel of oil
-//****************************************/
-//BarrelOfOil::BarrelOfOil(int startX, int startY, StudentWorld* tempWorld) : Actor(TID_BARREL, startX, startY, right, 1.0, 2, tempWorld) {
-//    setVisible(false);
-//}
-//
-//void BarrelOfOil::doSomething() {
-//    // Barrel is no longer on the field, so do nothing
-//    if (isDead()) {
-//        return;
-//    }
-//
-//    // Barrel is still on the field, do something
-//    if (!isVisible() &&  (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
-//        setVisible(true);
-//        return;
-//    }
-//
-//
-//    else if (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3) {
-//        setDead();
-//        getWorld()->playSound(SOUND_FOUND_OIL);
-//    }
-//}
-//
-//string BarrelOfOil::objectType() {
-//    return "BarrelOfOil";
-//}
-//
-//BarrelOfOil::~BarrelOfOil() {}
-//
-///****************************************
-//Squirt Class
-//****************************************/
-//Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {}
-//
-//void Squirt::doSomething() {
-//
-//}
-//
-//string Squirt::objectType() {
-//    return "Squirt";
-//}
-//
-//Squirt::~Squirt() {}
-//
-///****************************************
-//invenItems Abstract Base Class
-//****************************************/
-//invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
-//    Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {
-//
-//}
-//
-//int invenItems::getObjectState() {
-//    return objectState;
-//}
-//
-//void invenItems::setObjectState(int updatedState) {
-//    objectState = updatedState;
-//}
-//
-//invenItems::~invenItems() {}
-//
-///****************************************
-//GoldNugget Class
-//****************************************/
-//// Num of states of a gold nugget: 2
-////  - State 0: Pickupable by Tunnelman
-////  - State 1: Picupable by protestors
-//GoldNugget::GoldNugget(int startX, int startY, int state, StudentWorld* tempWorld) : invenItems(TID_GOLD, startX, startY, right, 1.0, 2, tempWorld) {
-//    setObjectState(state);
-//}
-//
-//void GoldNugget::doSomething() {
-//    // Gold nugget is no longer in the field
-//    if (isDead()) {
-//        return;
-//    }
-//
-//    // State 0:
-//    // The nugget is hidden under the earth
-//    if (!isVisible() && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 4 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 4)) {
-//        setVisible(true);
-//        return;
-//    }
-//
-//    // State 0:
-//    // The nugget is going to be picked up by the Tunnelman
-//    else if (getObjectState() == 0 && (abs(getWorld()->getActorObjectX("Tunnelman") - getX()) <= 3 && abs(getWorld()->getActorObjectY("Tunnelman") - getY()) <= 3)) {
-//        setDead();
-//        getWorld()->playSound(SOUND_GOT_GOODIE);
-//
-//        // TODO: Increase players score by ten points!!
-//
-//        // TODO: Tell Tunnelman Object it received a new nugget in it's inventory
-//    }
-//
-//    /*else if (getObjectState() == 1 &&)*/
-//}
-//
-//GoldNugget::~GoldNugget() {}
-
-///****************************************
-//Water Pool Class
-//****************************************/
-
-//STATES: 1 = temp
-WaterPool::WaterPool(int startX, int startY, int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld){
-    setVisible(true);
-    setObjectState(state);
-    int level = getWorld()->getLevel();
-    T = max(100,300-10* level);
-    //TODO: ONLY PICKUPABLE BY TUNNELMAN
-}
-
-void WaterPool::doSomething(){
-    if(isDead()){
-        return;
-    }
-    else if((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() -  getWorld()->getActorObjectY("Tunnelman")) <= 3)) { //when the water pool is within the radius of the tunnelman
-        setDead(); //gets set to dead when the tunnelman interacts with it
-        getWorld->playSound(SOUND_GOT_GOODIE); //waterpool sound
-        //TODO: tell tunnelman that it just received 5 new squirts of water
-        //TODO: Players score increases by 100
-    }
-    else if(ticks == T){ //when the ticks that let the water pool elapse then water pool dies
-        setDead();
-    }
-    
-    ticks++;
-}
-
-WaterPool::~WaterPool(){}
-
-//STATES: 1 = temporary
-///****************************************
-//Sonar Kit  Class
-//****************************************/
-SonarKit::SonarKit(int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, 0, 60, right, 1.0, 2, tempWorld){
-    setVisible(true);
-    setObjectState(state); //temporary state
-    int level = getWorld()->getLevel();
-    T = max(100,300-10* level);
-    //TODO: ONLY PICKUPABLE BY TUNNELMAN
-}
-
-void SonarKit::doSomething(){
-    if(isDead()){
-        return;
-    }
-    else if((abs(getX() - getWorld()->getActorObjectX("Tunnelman")) <= 3) && (abs(getY() -  getWorld()->getActorObjectY("Tunnelman")) <= 3)) { //when the water pool is within the radius of the tunnelman
-        setDead(); //gets set to dead when the tunnelman interacts with it
-        getWorld->playSound(SOUND_GOT_GOODIE); //waterpool sound
-        //TODO: tell tunnelman that it just received a sonar kit
-        //TODO: Players score increases by 75
-    }
-    else if(ticks == T){ //when the ticks that let the water pool elapse then water pool dies
-        setDead();
-    }
-    
-    ticks++;
-}
-
-SonarKit::~SonarKit(){}
-
-
-
-
-
-///****************************************
-//Protestor Class
-//****************************************/
-////Default Constructor
-//Protestor::Protestor(StudentWorld* tempWorld, Tunnelman* tunnelMan) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld){
-//     hitPoints = 5;
-//     leaveTheOil = false; //not in the oil field leave state
-//     current_level_number = getWorld() -> getLevel(); //gets current level using getLevel game world function
-//     ticksToWait = max (0, 3 - current_level_number/4); //formula found in pdf
-//     numSquares = 8 + (rand() % 60); //random number btn 8 and 60
-//     tMan = tunnelMan;
-//}
-//
-//void Protestor::doSomething(){
-//    Tunnelman* tMan = nullptr; //need to figure out how to properly use tunnelman from sutdent world here
-//
-//    if(ticks % ticksToWait == 0){ //checks if it should be in the resting state, if not do all the checks to do something
-//        if(leaveTheOil == true){ //try to leave arena
-//            if(getX() == 60 && getY() == 60){ //at the exit point and can therefore leave
-//                setDead(); //set status to dead
-//            }
-//            else{
-//                //TODO: dijkstra's to find the exit
-//            }
-//        }
-//        //     Else if the Tunnelman is visible via direct line of sight,
-//        //    then Switch direction to face the Tunnelman Move one square in this direction
-//        else{ //not trying to leave and all interactions with tunnelman
-//            //if i can see tunnelman
-//            if((abs(getX() - tMan->getX()) < 4) || (abs(getY() - tMan->getY()) < 4)) { //checks for a distance of 4 and facing direction of tMan
-//                Direction direction = getDirection();
-//                if((direction == left && tMan->getX() < getX()) || (direction == right && tMan->getX() > getX())
-//                || (direction == down && tMan->getY() < getY()) || (direction == up && tMan->getY() > getY())) //checks if facing same direction
-//                {
-//                    if(ticks % 15 == 0 && shout == true){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
-//                        getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
-//                        //TODO: deduct two hit points from tunnelman
-//                        shout = false; //can't shout again for another 15 non resting ticks
-//                        return;
-//                    }
-//                }
-//                else if(getX() == tMan->getX() && (abs(getY() - tMan->getY()) > 4)){ //same column but distance > 4
-//                    int distance = getY() - tMan->getY();
-//                    if(distance < 0){ //when distance is negative tunnelman is above
-//                        for(int i = getY(); i < tMan->getY(); i++){ //checks the path from protestor to tunnelman
-//                            if(isActor(getX(), i)){ //checks if there is an actor in the way
-//                                setDirection(up);
-//                                moveTo(getX(), getY() + 1); //takes a step towards him upwards
-//                            }
-//                        }
-//                    }
-//                    else{ //tunnelman is below
-//                        for(int i = tMan->getY(); i < getY(); i++){ //checks the path from tunnelman to protester
-//                            if(isActor(getX(), i)){ //checks if there is an actor in the way
-//                                setDirection(down);
-//                                moveTo(getX(), getY() - 1); //takes a step towards him downwards
-//                            }
-//                        }
-//                    }
-//                    return;
-//                }
-//                else if(getY() == tMan->getY() && (abs(getX() - tMan->getX()) > 4)){ //same row but distance > 4
-//                    int distance = getX() - tMan->getX();
-//                    if(distance < 0){ //when distance is negative tunnelman is right
-//                        for(int i = getX(); i < tMan->getX(); i++){ //checks the path from protestor to tunnelman
-//                            if(isActor(i, getY())){ //checks if there is an actor in the way
-//                                setDirection(right);
-//                                moveTo(getX() + 1, getY()); //takes a step towards him to the right
-//                                numSquares = 0; // forces protestor to pick a new direction/distance to move during its next non resting tik
-//                            }
-//                        }
-//                    }
-//                    else{ //tunnelman is left
-//                        for(int i = tMan->getX(); i < getX(); i++){ //checks the path from tunnelman to protester
-//                            if(isActor(i, getY())){ //checks if there is an actor in the way
-//                                setDirection(left);
-//                                moveTo(getX() - 1 , getY()); //takes a step towards him to the left
-//                                numSquares = 0; // forces protestor to pick a new direction/distance to move during its next non resting tik
-//
-//                            }
-//                        }
-//                    }
-//                    return;
-//                }
-//            }
-//            //code next step 6 here: Otherwise, the Regular Protester can’t directly see the Tunnelman an.
-//            else{
-//                numSquares = numSquares - 1;
-//                //step 6
-//                if(numSquares <= 0){ //when the reg pro has finished walking numSquares
-//                    int randomNum = 0;
-//                    int counter = 0; //to make sure the random number doesn't get chosen more than once
-//                    while(counter != 4){
-//                        randomNum = rand()%4; //chooses number from 0-4
-//                        if(randomNum == 1 && isActor(getX(), getY() + 1)){
-//                            setDirection(up);
-//                            counter++;
-//                        }
-//                        else if(randomNum == 2 && isActor(getX(), getY() - 1)){
-//                            setDirection(down);
-//                            counter++;
-//                        }
-//                        else if(randomNum == 3 && isActor(getX() + 1, getY())){
-//                            setDirection(right);
-//                            counter++;
-//                        }
-//                        else if(randomNum == 4 && isActor(getX() - 1, getY())){
-//                            setDirection(left);
-//                            counter++;
-//                        }
-//                        else{
-//                            cout << "no random number was chosen...this is for debugging" << endl;
-//                        }
-//                        perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
-//                    }
-//
-//                }
-//                //step 7
-//                else{
-//                    //checks for interection
-//                    if(perpTurn == true){
-//                        if(getDirection() == up){ //facing up/down, perp directions: left and right
-//                            if(!(isActor(getX() - 1, getY()))){ //if there is not an actor to the left
-//                                setDirection(left);
-//                            }
-//                            else{
-//                                setDirection(right);
-//                            }
-//                            perpTurn = false;
-//                        }
-//                        else if(getDirection() == right){ //facing right/left, perp directions: down and up
-//                            if(!(isActor(getX(), getY() - 1))){ //if there is not an actor to the left
-//                                setDirection(down);
-//                            }
-//                            else{
-//                                setDirection(up);
-//                            }
-//                            perpTurn = false;
-//                        }
-//                        else{
-//                            cout << "no directions viable, so there is a bug somewhere" << endl;
-//                        }
-//                    }
-//
-//                }
-//                numSquares = 8 + (rand() % 60); //random number btn 8 and 60
-//                //step 8 & 9
-//                if(getDirection() == up){
-//                    if(!isActor(getX(), getY() + 1)){
-//                        moveTo(getX(), getY() + 1);
-//                    }
-//                }
-//                else if(getDirection() == down){
-//                    if(!isActor(getX(), getY() - 1)){
-//                        moveTo(getX(), getY() - 1);
-//                    }
-//                }
-//                else if(getDirection() == right){
-//                    if(!isActor(getX() + 1, getY())){
-//                        moveTo(getX() + 1, getY());
-//                    }
-//                }
-//                else if(getDirection() == left){
-//                    if(!isActor(getX() - 1, getY())){
-//                        moveTo(getX() - 1, getY());
-//                    }
-//                }
-//                else{
-//                    return;
-//                }
-//            }
-//        }
-//    }
-//    else{
-//        ticks++; //keeps incrementing til the appropriate amt of ticks has elapsed
-//        if(ticks % 15 == 0){ //every 15 reg pro can shout again
-//            shout = true;
-//        }
-//        if(ticks % 200 == 0){ //every 200 reg pro can do a perpendicular turn again
-//            perpTurn = true;
-//        }
-//    }
-//
-//
-//
-//}
-//
-////Destructor
-//Protestor::~Protestor(){}
-
-
 
 
 /****************************************
 Tunnelman Class
 ****************************************/
 // Default constructor
-Tunnelman::Tunnelman(StudentWorld* tempWorld) : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0, tempWorld) {}
-
-string Tunnelman::objectType(){
-    return "Tunnelman";
+Tunnelman::Tunnelman(StudentWorld* tempWorld) : Humanoid(TID_PLAYER, 30, 60, right, 1.0, 0, tempWorld) {
+    // Set our Default Hitpoints
+    setHitPoints(10);
+    
+    // Set our default values for our inventory
+    inventory[0] = 0;
+    inventory[1] = 5;
+    inventory[2] = 1;
 }
 
 void Tunnelman::doSomething() {
@@ -498,20 +388,38 @@ void Tunnelman::doSomething() {
     if (getWorld()->getKey(ch) == true) {
         switch(ch){
             case KEY_PRESS_LEFT:
-                setDirection(left);
+                
+                if (getDirection() != left) {
+                    setDirection(left);
+
+                    break;
+                }
+
                 if (notPastBoundary(KEY_PRESS_LEFT)) {
                     moveTo(getX() - 1, getY());
                 }
 
                 break;
             case KEY_PRESS_RIGHT:
-                setDirection(right);
+                if (getDirection() != right) {
+                    setDirection(right);
+
+                    break;
+                }
+                
+                
                 if (notPastBoundary(KEY_PRESS_RIGHT)) {
                     moveTo(getX() + 1, getY());
                 }
                 
                 break;
             case KEY_PRESS_UP:
+                if (getDirection() != up) {
+                    setDirection(up);
+
+                    break;
+                }
+
                 setDirection(up);
                 if (notPastBoundary(KEY_PRESS_UP)) {
                     moveTo(getX(), getY() + 1);
@@ -519,10 +427,33 @@ void Tunnelman::doSomething() {
 
                 break;
             case KEY_PRESS_DOWN:
+                if (getDirection() != down) {
+                    setDirection(down);
+
+                    break;
+                }
+
                 setDirection(down);
                 if (notPastBoundary(KEY_PRESS_DOWN)) {
                     moveTo(getX(), getY() - 1);
                 }
+
+                break;
+            case KEY_PRESS_TAB:
+                // If we have gold nuggets to spare
+                if (inventory[0] > 0) {
+                    getWorld()->placeGoldNuggets(getX(), getY(), 1, getWorld());
+
+                    decrementInventoryCount(0);
+                }
+
+                break;
+            case KEY_PRESS_ESCAPE:
+                getWorld()->decLives();
+
+                break;
+            case 'q':
+                exit(0);
 
                 break;
         }
@@ -532,8 +463,9 @@ void Tunnelman::doSomething() {
     getWorld()->digEarth(getX(), getY());
 }
 
-// Will tell whether or not the current game object is past our game grid boundaries
-bool Tunnelman::notPastBoundary(int ch) {
+// Will tell whether or not the current game object is past our game grid boundaries OR if it's is
+//  running into a oz
+bool Humanoid::notPastBoundary(int ch) {
     switch (ch) {
     case KEY_PRESS_LEFT:
         if (getX() - 1 < 0) {
@@ -564,5 +496,307 @@ bool Tunnelman::notPastBoundary(int ch) {
     return true;
 }
 
+int Tunnelman::getInventoryCount(int item) {
+    // - Item 0: Gold
+    // - Item 1: Water charges
+    // - Item 2: Sonar charges
+
+    return inventory[item];
+}
+
+void Tunnelman::incrementInventoryCount(int item) {
+    // - Item 0: Gold (+1)
+    // - Item 1: Water charges (+5)
+    if (item == 1) {
+        inventory[item] += 5;
+
+        return;
+    }
+    // - Item 2: Sonar charges (+1)
+
+    inventory[item]++;
+}
+
+void Tunnelman::decrementInventoryCount(int item) {
+    // - Item 0: Gold
+    // - Item 1: Water charges
+    // - Item 2: Sonar charges
+
+    inventory[item]--;
+}
+
+string Tunnelman::objectType() {
+    return "Tunnelman";
+}
+
 // Destructor
 Tunnelman::~Tunnelman() {}
+
+/****************************************
+Protestor Class
+****************************************/
+//Default Constructor
+Protestor::Protestor(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld){
+     hitPoints = 5;
+     leaveTheOil = false; //not in the oil field leave state
+     current_level_number = getWorld() -> getLevel(); //gets current level using getLevel game world function
+     ticksToWait = max (0, 3 - current_level_number/4); //formula found in pdf
+     numSquares = getWorld()->random(8,60,'n'); //random number btn 8 and 60
+}
+
+void Protestor::doSomething(){
+    int xPro = getX();
+    int yPro = getY();
+    int xTMan = getWorld()->getActorObjectX("TunnelMan");
+    int yTMan = getWorld()->getActorObjectY("TunnelMan");
+    int tDistanceX = xPro - xTMan;
+    int tDistanceY = yPro - yTMan;
+    
+    if(isDead()){ //if dead return immediately
+        return;
+    }
+    
+    if(ticks % ticksToWait == 0){ //checks if it should be in the resting state, if not do all the checks to do something
+        if(leaveTheOil == true){ //try to leave arena
+            if(getX() == 60 && getY() == 60){ //at the exit point and can therefore leave
+                setDead(); //set status to dead
+            }
+//            else{
+//                //TODO: breadth first search to find the exit
+//            }
+        }
+        //     Else if the Tunnelman is visible via direct line of sight,
+        //    then Switch direction to face the Tunnelman Move one square in this direction
+        else{ //not trying to leave and all interactions with tunnelman
+            //if i can see tunnelman
+            if((abs(tDistanceX) < 4) || (abs(tDistanceY) < 4)) { //checks for a distance of 4 and facing direction of tMan
+                Direction direction = getDirection();
+                if(tDistanceX < 0){ //tunnelman is to the right of the protester
+                    cout << "I SEE TUNNELMAN to the left of me " << endl;
+                }
+                else if (tDistanceX > 0){
+                    cout << "I SEE TUNNELMAN to the right of me" << endl;
+                }
+                else if (tDistanceY > 0){
+                    cout << "I SEE TUNNELMAN above me" << endl;
+                }
+                else if(tDistanceY  < 0){
+                    cout << "I SEE TUNNELMAN under me" << endl;
+                }
+                if((direction == left && xTMan < xPro) || (direction == right && xTMan > xPro)
+                || (direction == down && yTMan < yPro) || (direction == up && yTMan > yPro)) //checks if facing same direction
+                { //facing left and tunnelman is to the left
+                    cout << "I SEE TUNNELMAN " << endl;
+                    if(ticks % 15 == 0 && shout == true){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
+                        getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
+                        //TODO: deduct two hit points from tunnelman
+                        shout = false; //can't shout again for another 15 non resting ticks
+                        return;
+                    }
+                }
+                //step 5
+                else if(getX() == getWorld()->getActorObjectX("TunnelMan") && (abs(tDistanceY) > 4)){ //same column but distance > 4
+                    bool clearPath = true;
+                    if(tDistanceY < 0){ //when distance is negative tunnelman is above
+                        for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from protestor to tunnelman
+                            if(earthBoulderCheck(xPro, yPro + i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                                clearPath = false;
+                            }
+                        }
+                        if(clearPath == true){
+                            setDirection(up);
+                            moveTo(xPro, yPro + 1); //takes a step towards him upwards
+                        }
+                    }
+                    else{ //tunnelman is below
+                        for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from tunnelman to protester
+                            if(earthBoulderCheck(xPro, yPro - i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                                clearPath = false;
+                            }
+                        }
+                        if(clearPath == true){
+                            setDirection(down);
+                            moveTo(xPro, yPro - 1); //takes a step towards him downwards
+                        }
+                    }
+                    numSquares = 0;
+                    return;
+                }
+                else if(getY() == getWorld()->getActorObjectY("TunnelMan") && (abs(tDistanceX) > 4)){ //same row but distance > 4
+                    bool clearPath = true;
+                    if(tDistanceX < 0){ //when distance is negative tunnelman is to the right
+                        for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from protestor to tunnelman
+                            if(earthBoulderCheck(xPro + i, yPro)){ //checks if there is earth or a boulder in the way
+                                clearPath = false; //if there is stuff in the way, clearPath is false
+                            }
+                        }
+                        if(clearPath == true){
+                            setDirection(up);
+                            moveTo(xPro+1, yPro); //takes a step towards him to the right
+                        }
+                    }
+                    else{ //tunnelman is left
+                        for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from tunnelman to protester
+                            if(earthBoulderCheck(xPro - i, yPro)){
+                                clearPath = false;
+                            }
+                        }
+                        if(clearPath == true){
+                            setDirection(down);
+                            moveTo(xPro-1, yPro); //takes a step towards him to the left
+                        }
+                    }
+                    numSquares = 0;
+                    return;
+            }
+            }
+            //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman an.
+            else{
+                numSquares = numSquares - 1;
+                //step 6
+                bool clear = false;
+                //cout << "NUM SQUARES " << numSquares << endl;
+                if(numSquares <= 0){ //when the reg pro has finished walking numSquares
+                    int randomNum = 0;
+                    int counter = 0; //to make sure the random number doesn't get chosen more than once
+                    while(counter != 4 && clear == false){
+                        randomNum = getWorld()->random(0,4, 'n');//chooses number from 0-4
+                        if(randomNum == 1 && earthBoulderCheck(xPro, yPro + 1)){
+                            setDirection(up);
+                            clear = true;
+                        }
+                        else if(randomNum == 2 && earthBoulderCheck(xPro, yPro - 1)){
+                            setDirection(down);
+                            clear = true;
+                        }
+                        else if(randomNum == 3 && earthBoulderCheck(xPro + 1, yPro)){
+                            setDirection(right);
+                            clear = true;
+
+                        }
+                        else if(randomNum == 4 && earthBoulderCheck(xPro - 1, yPro)){
+                            setDirection(left);
+                            clear = true;
+                        }
+                        else{
+                            counter++;
+                        }
+                        cout  << endl << "new direction has been chosen"  << endl;
+                        perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+                    }
+                    if(clear == false){
+                        cout << "there is a bug for step 6" << endl;
+                    }
+                    numSquares = getWorld()->random(8,60, 'n'); //random number btn 8 and 60
+                }
+                //step 7
+                else if (getWorld()->actorsInObjectHitBox(xPro+1, yPro, 0,0, "Earth") == -1 && getWorld()->actorsInObjectHitBox(xPro-1, yPro, 0,0, "Earth") == -1  && getWorld()->actorsInObjectHitBox(xPro, yPro + 1, 0,0, "Earth") == -1  && getWorld()->actorsInObjectHitBox(xPro, yPro -1 , 0,0, "Earth")  == -1){ //checks if it is in an intersection
+                    cout << "intersection" << endl;
+                    if(perpTurn == true ){
+                        if(getDirection() == up){ //facing up/down, perp directions: left and right
+                            if(earthBoulderCheck(xPro - 1, yPro)){ //if there is not an actor to the left
+                                setDirection(left);
+                            }
+                            else if(earthBoulderCheck(xPro + 1, yPro)){
+                                setDirection(right);
+                            }
+                            perpTurn = false;
+                        }
+                        else if(getDirection() == down){ //facing up/down, perp directions: left and right
+                            cout << "DOWN" << endl;
+                            if(earthBoulderCheck(xPro + 1, yPro) ){ //if there is not an actor to the left
+                                setDirection(right);
+                            }
+                            else if(earthBoulderCheck(xPro - 1, yPro)){
+                                setDirection(left);
+                            }
+                            perpTurn = false;
+                        }
+                        else if(getDirection() == right){ //facing right/left, perp directions: down and up
+                            if(earthBoulderCheck(xPro, yPro + 1)){ //if there is not an actor to the left
+                                setDirection(up);
+                            }
+                            else if(earthBoulderCheck(xPro, yPro - 1) ){
+                                setDirection(down);
+                            }
+                            perpTurn = false;
+                        }
+                        else if(getDirection() == left){ //facing right/left, perp directions: down and up
+                            if(earthBoulderCheck(xPro, yPro-1)){ //if there is not an actor to the left
+                                setDirection(down);
+                                cout << endl << "looks down in the beginning" << endl;
+                            }
+                            else if(earthBoulderCheck(xPro, yPro+1) ){
+                                setDirection(up);
+                            }
+                            perpTurn = false;
+                        }
+                        else{
+                            cout << "REALLY BAD FOR STEP 7" << endl;
+                        }
+                    }
+                }
+            }
+            //step 8 and checks bounds before moving too
+            if(getDirection() == up){
+                if(earthBoulderCheck(xPro, yPro + 1) && notPastBoundary(up)){
+                    if(yPro == 60){
+                        setDirection(down);
+                    }
+                    moveTo(getX(), getY() + 1);
+                }
+            }
+            else if(getDirection() == down){
+                if(earthBoulderCheck(xPro , yPro-1) && notPastBoundary(down)){
+                    if(yPro == 0){
+                        setDirection(up);
+                        cout << "please move up" << endl;
+                    }
+                    moveTo(getX(), getY() - 1);
+                }
+            }
+            else if(getDirection() == right){
+                if(earthBoulderCheck(xPro + 1, yPro) && notPastBoundary(right)){
+                    if(xPro == 63){
+                        setDirection(left);
+                    }
+                    moveTo(getX() + 1, getY());
+                }
+            }
+            else if(getDirection() == left){
+                if(earthBoulderCheck(xPro-1, yPro) && notPastBoundary(left)){
+                    if(xPro == 2){ //ugly fix
+                        cout << "please move to the right" << endl;
+                        setDirection(right);
+                        //moveTo(getX() +  1, getY());
+
+                    }
+                    moveTo(getX() - 1, getY());
+                }
+            }
+        }
+    }
+    //step 9ish
+    else{
+        numSquares = 0;
+        ticks++; //keeps incrementing til the appropriate amt of ticks has elapsed
+        if(ticks % 15 == 0){ //every 15 reg pro can shout again
+            shout = true;
+        }
+        if(ticks % 200 == 0){ //every 200 reg pro can do a perpendicular turn again
+            perpTurn = true;
+        }
+    }
+}
+
+//uses studentWorld hitbox function to check earth and boulder at the same time for protestor
+bool Protestor::earthBoulderCheck(int x, int y){
+    if(getWorld()->actorsInObjectHitBox(x, y, 4,4, "Earth") == 1 && getWorld()->actorsInObjectHitBox(x, y, 4,4, "Boulder") == -1){
+        return false; 
+    }
+    return true;
+    
+}
+
+//Destructor
+Protestor::~Protestor(){}

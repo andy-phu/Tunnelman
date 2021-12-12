@@ -1,11 +1,16 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
+#include <string>
+
 #include "GraphObject.h"
 
 class StudentWorld; 
 class Tunnelman;
 
+/****************************************
+Actor Abstract Base Class
+****************************************/
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 // Actor - Abstract base class for all game Objects
 class Actor: public GraphObject {
@@ -17,26 +22,28 @@ public:
     virtual void doSomething() = 0;
 
     virtual StudentWorld* getWorld();
-    
-    
+
     virtual std::string objectType();
 
     virtual void setDead();
-    
+
     virtual bool isDead();
-    
-    virtual bool isActor(int, int); //checks to see if there is an actor at certain location
-    
-    
+
+    int getTick();
+
+    void incrementTick();
+
     // Destructor
     virtual ~Actor();
 private:
-    int imageID;
     StudentWorld* gWorld;
-    Actor* actor;
-    bool dead; 
+    bool dead;
+    int tick = 0;
 };
 
+/****************************************
+Earth Class
+****************************************/
 class Earth : public Actor {
 public:
     // Default constructor
@@ -44,98 +51,37 @@ public:
 
     // This function does nothing
     virtual void doSomething();
-    
-    
+
+    virtual std::string objectType();
+
     // Destructor
     virtual ~Earth();
 };
 
-// Humanoid - base class used for all human type objects within the game
-class Humanoid : public Actor {
-public:
-    // Default construtor
-    Humanoid(int, int, int, Direction, float, unsigned int, StudentWorld*);
-
-    // virtual void doSomething() = 0;    // Leaving this line to signify that we are still inheritting this function as a
-                                          //    pure virtual function from Actor
-                                       
-    /*virtual bool notPastBoundary();*/
-    
-    // bool isAnnoyed() = 0;            // TODO: Will not implement this yet, leaving in to show this is not just going to
-                    
-    //    be a copy and paste of Actor.
-    // Destructor
-    virtual ~Humanoid();
-};
-
-//class Protestor : public Humanoid {
-//public:
-//    //default constructor
-//    Protestor(StudentWorld*, Tunnelman*);
-//    
-//    virtual void doSomething();
-//
-//    //virtual bool notPastBoundary(int); //TODO: .
-//
-//    virtual ~Protestor();
-//
-//private:
-//    int hitPoints;
-//    int numSquares;
-//    int current_level_number;
-//    int ticksToWait;
-//    int ticks = 0;
-//    bool leaveTheOil;
-//    int remainder = 0;
-//    bool shout = true; //can shout in the beginning
-//    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
-//    Tunnelman* tMan;
-//};
-
-// Tunnelman - Gameobject that will be used for in game character Tunnelman, notice this class is final
-//    meaning that no other classes may inherit from this class.
-class Tunnelman : public Humanoid {
-public:
-    //Default constructor
-    Tunnelman(StudentWorld*);
-
-    virtual std::string objectType();
-    
-    virtual void doSomething();
-
-    virtual bool notPastBoundary(int);
-
-    virtual ~Tunnelman();
-
-};
-
+/****************************************
+Boulder Class
+****************************************/
 class Boulder : public Actor {
 public:
     Boulder(int, int, StudentWorld*);
-    
+
     virtual std::string objectType();
 
     virtual void doSomething();
 
-    //virtual ~Boulder();
+    virtual ~Boulder();
 
 private:
     int state;
-    int ticks = 0; 
+    int ticks = 0;
     Tunnelman* playerObj;
-    
 };
 
-
-
-
 /****************************************
-Barrel of oil
+Barrel of oil Class
 ****************************************/
 class BarrelOfOil : public Actor {
 public:
-    BarrelOfOil(int, int, Tunnelman*, StudentWorld*);
-    
     BarrelOfOil(int, int, StudentWorld*);
 
     virtual void doSomething();
@@ -158,7 +104,6 @@ public:
 
     virtual ~Squirt();
 private:
-    Tunnelman* playerObj;
     int travelDistance = 4;
 };
 
@@ -196,12 +141,12 @@ public:
 };
 
 /****************************************
-Water Pool
+Water Class
 ****************************************/
 class WaterPool : public invenItems {
 public:
-    
-    WaterPool(int, int, int, StudentWorld*);
+    // Default Constructor
+    WaterPool(int, int, StudentWorld*);
 
     virtual void doSomething();
 
@@ -210,17 +155,16 @@ public:
     virtual ~WaterPool();
 
 private:
-    int T; //ticks that a water pool can exist
-    int ticks = 0;
+    int level;
 };
 
+
 /****************************************
-Sonar Kit
+Sonar Class
 ****************************************/
 class SonarKit : public invenItems {
 public:
-    
-    SonarKit(int, StudentWorld*);
+    SonarKit(int, int, StudentWorld*);
 
     virtual void doSomething();
 
@@ -229,8 +173,95 @@ public:
     virtual ~SonarKit();
 
 private:
-    int T; //ticks that a water pool can exist
+    int level;
+};
+
+/****************************************
+Humanoid Abstract Base Class
+****************************************/
+// Humanoid - base class used for all human type objects within the game
+class Humanoid : public Actor {
+public:
+    // Default construtor
+    Humanoid(int, int, int, Direction, float, unsigned int, StudentWorld*);
+
+    // virtual void doSomething() = 0;    // Leaving this line to signify that we are still inheritting this function as a
+                                          //    pure virtual function from Actor
+                                       
+    virtual bool notPastBoundary(int);
+    
+    bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
+                                     //    be a copy and paste of Actor.
+
+    int getHitPoints();
+
+    // This function will be used to both set default Hit Points value upon spawn
+    //  and also deal dmg to the objects hit points. 
+    void setHitPoints(int);
+
+    // Destructor
+    virtual ~Humanoid();
+
+private:
+    int hitPoints;
+};
+
+/****************************************
+Tunnelman Class
+****************************************/
+// Tunnelman - Gameobject that will be used for in game character Tunnelman, notice this class is final
+//    meaning that no other classes may inherit from this class.
+class Tunnelman : public Humanoid {
+public:
+    //Default constructor
+    Tunnelman(StudentWorld*);
+
+    virtual void doSomething();
+
+    //virtual bool notPastBoundary(int);
+    
+    virtual int getInventoryCount(int);
+
+    virtual void incrementInventoryCount(int);
+
+    virtual void decrementInventoryCount(int);
+
+    virtual std::string objectType();
+
+    virtual ~Tunnelman();
+
+private:
+    // The Tunnelman holds 3 items
+    //  - Item 0: Gold
+    //  - Item 1: Water
+    //  - Item 2: Sonar Charges
+    int inventory[3];
+};
+
+class Protestor : public Humanoid {
+public:
+    //default constructor
+    Protestor(StudentWorld*);
+
+    virtual void doSomething();
+    
+    bool earthBoulderCheck(int,int);
+    
+    //virtual bool notPastBoundary(int);
+
+    virtual ~Protestor();
+
+private:
+    int hitPoints;
+    int numSquares;
+    int current_level_number;
+    int ticksToWait;
     int ticks = 0;
+    bool leaveTheOil;
+    int remainder = 0;
+    bool shout = true; //can shout in the beginning
+    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
+    
 };
 
 #endif // ACTOR_H_
