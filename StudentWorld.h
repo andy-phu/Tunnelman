@@ -15,6 +15,8 @@ class Earth;
 class Actor;
 class Protestor;
 class Boulder;
+class SonarKit;
+class WaterPool;
 
 class StudentWorld : public GameWorld
 {
@@ -57,6 +59,8 @@ private:
     Tunnelman* tMan;
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
+    SonarKit* sKit;
+    WaterPool* wPool; 
     //FOR BOULDER
     Boulder* boulder;
     int level;

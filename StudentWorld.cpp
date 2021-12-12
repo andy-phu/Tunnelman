@@ -114,7 +114,40 @@ int StudentWorld::move(){
     //TODO: SONAR AND WATER GOODIES
     int G = level*25 + 300; //1 in a G chance that a new water pool or sonar kit goodie will be added to the oil field during
                           //any particular tick
+    bool clear;
+    vector<int> clearArrX, clearArrY;
+    int range = random(0,G);
     
+    if(0 < range && range <= G/5){ //between 0 and G/5 is the sonar kit
+        sKit = new SonarKit(1,this);
+        vActors.push_back(sKit);
+    }
+    else if(G/5 < range && range <= G){ //the 4/5G range, which is the water pool
+        //addded in a 4x4 grid where there is no earth
+        //checks all of earth
+        for(int i = 0; i < 60; i++){
+            for(int j = 0; j < 60; j++){
+                if(isEarth(j,i)){ //goes throught the whole row first then goes down one column
+                    clear = true; //which ever is true still is where there is a clear 4x4
+                    //checks 4 squares at a time to see if there is an empty patch
+                    for(int a = 0; a < 4; a++){ //checks the squares 4x4 underneath
+                        if(isEarth(j,i-a)){ //if there is earth auto false
+                            clear = false;
+                        }
+                    }
+                    if(clear == true){
+                        //keeps track of all the different 4x4 spaces to choose a random one at the end
+                        clearArrX.push_back(j);
+                        clearArrY.push_back(i);
+                    }
+                }
+            }
+        }
+        //places the random spot water pool
+        int randomSpot = random(0,clearArrX.size()); //chooses random from 0 to the vector size
+        wPool = new WaterPool(clearArrX[randomSpot],clearArrY[randomSpot],1,this); //places water pool
+        vActors.push_back(wPool); //pushes the goodie into the vector of actors 
+    }
     //water goodie added to a random 4x4 spot in the oil field
     
     

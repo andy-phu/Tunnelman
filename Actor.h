@@ -220,7 +220,7 @@ Sonar Kit
 class SonarKit : public invenItems {
 public:
     
-    SonarKit(int, int, int, StudentWorld*);
+    SonarKit(int, StudentWorld*);
 
     virtual void doSomething();
 

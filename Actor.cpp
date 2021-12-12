@@ -222,6 +222,8 @@ void Boulder::doSomething(){
 ///****************************************
 //Water Pool Class
 //****************************************/
+
+//STATES: 1 = temp
 WaterPool::WaterPool(int startX, int startY, int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld){
     setVisible(true);
     setObjectState(state);
@@ -249,10 +251,11 @@ void WaterPool::doSomething(){
 
 WaterPool::~WaterPool(){}
 
+//STATES: 1 = temporary
 ///****************************************
 //Sonar Kit  Class
 //****************************************/
-SonarKit::SonarKit(int startX, int startY, int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, startX, startY, right, 1.0, 2, tempWorld){
+SonarKit::SonarKit(int state, StudentWorld* tempWorld): invenItems(TID_WATER_POOL, 0, 60, right, 1.0, 2, tempWorld){
     setVisible(true);
     setObjectState(state); //temporary state
     int level = getWorld()->getLevel();
