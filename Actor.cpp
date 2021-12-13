@@ -685,14 +685,14 @@ void Protestor::doSomething(){
                         setDirection(left);
                         clear = true;
                     }
-                    perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+                    perpTurnTicks= 0; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
                 }
                 numSquares = getWorld()->random(8,60, 'n'); //random number btn 8 and 60
             }
             //step 7
             else if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro,left)){//checks if it is in an intersection
                 cout << "intersection" << endl;
-                if(perpTurn == true ){
+                if(perpTurnTicks > 200 ){
                     if(dir == up){ //facing up/down, perp directions: left and right
                         if(earthBoulderCheck(xPro - 1, yPro)){ //if there is not an actor to the left
                             setDirection(left);
@@ -700,7 +700,7 @@ void Protestor::doSomething(){
                         else if(earthBoulderCheck(xPro + 1, yPro)){
                             setDirection(right);
                         }
-                        perpTurn = false;
+                        perpTurn = 0;
                     }
                     else if(dir == down){ //facing up/down, perp directions: left and right
                         cout << "DOWN" << endl;
@@ -710,7 +710,7 @@ void Protestor::doSomething(){
                         else if(earthBoulderCheck(xPro - 1, yPro)){
                             setDirection(left);
                         }
-                        perpTurn = false;
+                        perpTurn = 0;
                     }
                     else if(dir == right){ //facing right/left, perp directions: down and up
                         if(earthBoulderCheck(xPro, yPro + 1)){ //if there is not an actor to the left
@@ -719,7 +719,7 @@ void Protestor::doSomething(){
                         else if(earthBoulderCheck(xPro, yPro - 1) ){
                             setDirection(down);
                         }
-                        perpTurn = false;
+                        perpTurn = 0;
                     }
                     else if(dir == left){ //facing right/left, perp directions: down and up
                         if(earthBoulderCheck(xPro, yPro-1)){ //if there is not an actor to the left
@@ -728,7 +728,7 @@ void Protestor::doSomething(){
                         else if(earthBoulderCheck(xPro, yPro+1) ){
                             setDirection(up);
                         }
-                        perpTurn = false;
+                        perpTurnTicks = 0;
                     }
                     else{
                         cout << "REALLY BAD FOR STEP 7" << endl;
