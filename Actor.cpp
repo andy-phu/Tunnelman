@@ -586,7 +586,9 @@ void Protestor::doSomething(){
     }
     else{ //not trying to leave and all interactions with tunnelman
         //if i can see tunnelman
-        if((abs(tDistanceX) == 4)&&(abs(tDistanceY) == 4)) { //checks for a distance of 4 and facing direction of tMan
+        cout << "TDISTNAC " << tDistanceX << endl;
+        if((abs(tDistanceX) == 4) || (abs(tDistanceY) == 4)) { //checks for a distance of 4 and facing direction of tMan
+            cout << "test " << endl;
             if(facingDirection(xPro, yPro, xTMan, yTMan, dir)){
                 if(shoutTicks > 15){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
                     getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
