@@ -253,6 +253,8 @@ public:
     
     bool facingDirection(int, int, int, int, Direction);
     
+    bool radiusCheck(int, int, int, int, int, int);
+    
     //virtual bool notPastBoundary(int);
 
     virtual ~Protestor();
@@ -265,7 +267,6 @@ private:
     int shoutTicks = 15;
     int perpTurnTicks = 200;
     bool leaveTheOil;
-    int remainder = 0;
     bool shout = true; //can shout in the beginning
     bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
     

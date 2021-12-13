@@ -559,9 +559,9 @@ void Protestor::doSomething(){
     
     //cout << "SHOUT TICKS " << shoutTicks << endl;
     //increments to keep track of when it can move
-    cout << " TICKS " << ticksToWait << endl;
-    cout << " PRO " << xPro << endl;
-    cout << " shout  " << shoutTicks << endl;
+    //cout << " TICKS " << ticksToWait << endl;
+//    cout << " PRO " << xPro << endl;
+//    cout << " shout  " << shoutTicks << endl;
 
     if(ticksToWait > 0) {
         ticksToWait--;
@@ -589,9 +589,9 @@ void Protestor::doSomething(){
     }
     else{ //not trying to leave and all interactions with tunnelman
         //if i can see tunnelman
-        cout << "TDISTNAC " << tDistanceX << endl;
-        if((abs(tDistanceX) == 4) || (abs(tDistanceY) == 4)) { //checks for a distance of 4 and facing direction of tMan
-            cout << "test " << endl;
+        //cout << "TDISTNAC " << tDistanceX << endl;
+        if(((abs(tDistanceX) == 4) || (abs(tDistanceY) == 4)) && radiusCheck(xPro, yPro, xTMan, yTMan, tDistanceX, tDistanceY)) { //checks for a distance of 4 and facing direction of tMan
+            cout << "PASSES RADIUS CHECK " << endl;
             if(facingDirection(xPro, yPro, xTMan, yTMan, dir)){
                 if(shoutTicks > 15){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
                     getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
@@ -666,8 +666,8 @@ void Protestor::doSomething(){
         //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
         else{
             numSquares = numSquares - 1;
-
-            //step 7
+            //cout << " numbersquares "  << numSquares << endl;
+            //step 6
             bool clear = false;
             //cout << "NUM SQUARES " << numSquares << endl;
             if(numSquares <= 0){ //when the reg pro has finished walking numSquares
@@ -769,14 +769,12 @@ void Protestor::doSomething(){
                 moveTo(xPro + 1, yPro);
             }
             else{
-                cout << "ALL THE WAY IN THE TOP RIGHT CORNER " << endl;
                 setDirection(left);
             }
             break;
         }
         case left:{
             if(xPro == 3){
-                cout << "ALL THE WAY IN THE TOP LEFT CORNER " << endl;
                 setDirection(right);
                 break;
             }
@@ -884,7 +882,6 @@ bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir){
         }
         case left:{
             if(xP > xT && yP == yT){
-                cout << "Facing tunnelman to the left " << endl;
                 return true;
                 break;
             }
@@ -898,5 +895,41 @@ bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir){
     }
 }
 
+bool Protestor::radiusCheck(int xP, int yP, int xT, int yT, int xDist, int yDist){
+    if(xP == xT && yP < yT){ //same x but the tunnelman is above the protester
+        for(int i = 0; i < yDist; i++){
+            if(earthBoulderCheck(xP,yP + i) == false){ //there is earth there
+                return false;
+            }
+        }
+        return true;
+    }
+    else if(xP == xT && yP > yT){ //same x but the tunnelman is below the protester
+        for(int i = 0; i < yDist; i++){
+            if(earthBoulderCheck(xP,yP - i) == false){ //there is earth there
+                return false;
+            }
+        }
+        return true;
+    }
+    else if(xP > xT && yP == yT){ //same y but the tunnelman is left of the protester
+        for(int i = 0; i < yDist; i++){
+            if(earthBoulderCheck(xP - i,yP) == false){ //there is earth there
+                return false;
+            }
+        }
+        return true;
+    }
+    else if(xP < xT && yP == yT){ //same y but the tunnelman is right of the protester
+        for(int i = 0; i < yDist; i++){
+            if(earthBoulderCheck(xP + i,yP) == false){ //there is earth there
+                return false;
+            }
+        }
+        return true;
+    }
+    cout << "RADIUS BUG " << endl;
+    return false;
+}
 //Destructor
 Protestor::~Protestor(){}
