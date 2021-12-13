@@ -559,16 +559,19 @@ void Protestor::doSomething(){
     
     //cout << "SHOUT TICKS " << shoutTicks << endl;
     //increments to keep track of when it can move
+    cout << " TICKS " << ticksToWait << endl;
+    cout << " PRO " << xPro << endl;
+    cout << " shout  " << shoutTicks << endl;
+
     if(ticksToWait > 0) {
         ticksToWait--;
         return;
     }
     else{
         ticksToWait = max (0, 3 - current_level_number/4);
-        shoutTicks++;
-        perpTurnTicks++;
     }
-    
+    shoutTicks++;
+    perpTurnTicks++;
     if(xPro == 3){
         //stuck in top left corner
         moveTo(xPro+1, yPro);
@@ -598,6 +601,7 @@ void Protestor::doSomething(){
                     shoutTicks = 0; //can't shout again for another 15 non resting ticks
                     return;
                 }
+                return;
             }
             else{
                 return;
