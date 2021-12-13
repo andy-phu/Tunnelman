@@ -540,262 +540,356 @@ Protestor::Protestor(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, 
      hitPoints = 5;
      leaveTheOil = false; //not in the oil field leave state
      current_level_number = getWorld() -> getLevel(); //gets current level using getLevel game world function
-     ticksToWait = max (0, 3 - current_level_number/4); //formula found in pdf
+    ticksToWait = max (0, 3 - current_level_number/4); //formula found in pdf
      numSquares = getWorld()->random(8,60,'n'); //random number btn 8 and 60
 }
 
 void Protestor::doSomething(){
     int xPro = getX();
     int yPro = getY();
-    int xTMan = getWorld()->getActorObjectX("TunnelMan");
-    int yTMan = getWorld()->getActorObjectY("TunnelMan");
+    int xTMan = getWorld()->getActorObjectX("Tunnelman");
+    int yTMan = getWorld()->getActorObjectY("Tunnelman");
     int tDistanceX = xPro - xTMan;
     int tDistanceY = yPro - yTMan;
+    Direction dir = getDirection();
     
     if(isDead()){ //if dead return immediately
         return;
     }
     
-    if(ticks % ticksToWait == 0){ //checks if it should be in the resting state, if not do all the checks to do something
-        if(leaveTheOil == true){ //try to leave arena
-            if(getX() == 60 && getY() == 60){ //at the exit point and can therefore leave
-                setDead(); //set status to dead
-            }
+    //cout << "SHOUT TICKS " << shoutTicks << endl;
+    //increments to keep track of when it can move
+    if(ticksToWait > 0) {
+        ticksToWait--;
+        return;
+    }
+    else{
+        ticksToWait = max (0, 3 - current_level_number/4);
+        shoutTicks++;
+        perpTurnTicks++;
+    }
+    
+    if(xPro == 3){
+        //stuck in top left corner
+        moveTo(xPro+1, yPro);
+        setDirection(right);
+        return;
+    }
+    
+    if(leaveTheOil == true){ //leave the oil phase
+        if(getX() == 60 && getY() == 60){ //at the exit point and can therefore leave
+            setDead(); //set status to dead
+        }
 //            else{
 //                //TODO: breadth first search to find the exit
 //            }
-        }
-        //     Else if the Tunnelman is visible via direct line of sight,
-        //    then Switch direction to face the Tunnelman Move one square in this direction
-        else{ //not trying to leave and all interactions with tunnelman
-            //if i can see tunnelman
-            if((abs(tDistanceX) < 4) || (abs(tDistanceY) < 4)) { //checks for a distance of 4 and facing direction of tMan
-                Direction direction = getDirection();
-                if(tDistanceX < 0){ //tunnelman is to the right of the protester
-                    cout << "I SEE TUNNELMAN to the left of me " << endl;
-                }
-                else if (tDistanceX > 0){
-                    cout << "I SEE TUNNELMAN to the right of me" << endl;
-                }
-                else if (tDistanceY > 0){
-                    cout << "I SEE TUNNELMAN above me" << endl;
-                }
-                else if(tDistanceY  < 0){
-                    cout << "I SEE TUNNELMAN under me" << endl;
-                }
-                if((direction == left && xTMan < xPro) || (direction == right && xTMan > xPro)
-                || (direction == down && yTMan < yPro) || (direction == up && yTMan > yPro)) //checks if facing same direction
-                { //facing left and tunnelman is to the left
-                    cout << "I SEE TUNNELMAN " << endl;
-                    if(ticks % 15 == 0 && shout == true){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
-                        getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
-                        //TODO: deduct two hit points from tunnelman
-                        shout = false; //can't shout again for another 15 non resting ticks
-                        return;
-                    }
-                }
-                //step 5
-                else if(getX() == getWorld()->getActorObjectX("TunnelMan") && (abs(tDistanceY) > 4)){ //same column but distance > 4
-                    bool clearPath = true;
-                    if(tDistanceY < 0){ //when distance is negative tunnelman is above
-                        for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from protestor to tunnelman
-                            if(earthBoulderCheck(xPro, yPro + i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
-                                clearPath = false;
-                            }
-                        }
-                        if(clearPath == true){
-                            setDirection(up);
-                            moveTo(xPro, yPro + 1); //takes a step towards him upwards
-                        }
-                    }
-                    else{ //tunnelman is below
-                        for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from tunnelman to protester
-                            if(earthBoulderCheck(xPro, yPro - i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
-                                clearPath = false;
-                            }
-                        }
-                        if(clearPath == true){
-                            setDirection(down);
-                            moveTo(xPro, yPro - 1); //takes a step towards him downwards
-                        }
-                    }
-                    numSquares = 0;
+    }
+    else{ //not trying to leave and all interactions with tunnelman
+        //if i can see tunnelman
+        if((abs(tDistanceX) == 4)&&(abs(tDistanceY) == 4)) { //checks for a distance of 4 and facing direction of tMan
+            if(facingDirection(xPro, yPro, xTMan, yTMan, dir)){
+                if(shoutTicks > 15){ //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
+                    getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
+                    //TODO: deduct two hit points from tunnelman
+                    getWorld()->dealDmg(-2,"Tunnelman");
+                    cout << "YELLING AT TUNNELMAN " << endl;
+                    shoutTicks = 0; //can't shout again for another 15 non resting ticks
                     return;
                 }
-                else if(getY() == getWorld()->getActorObjectY("TunnelMan") && (abs(tDistanceX) > 4)){ //same row but distance > 4
-                    bool clearPath = true;
-                    if(tDistanceX < 0){ //when distance is negative tunnelman is to the right
-                        for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from protestor to tunnelman
-                            if(earthBoulderCheck(xPro + i, yPro)){ //checks if there is earth or a boulder in the way
-                                clearPath = false; //if there is stuff in the way, clearPath is false
-                            }
-                        }
-                        if(clearPath == true){
-                            setDirection(up);
-                            moveTo(xPro+1, yPro); //takes a step towards him to the right
-                        }
-                    }
-                    else{ //tunnelman is left
-                        for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from tunnelman to protester
-                            if(earthBoulderCheck(xPro - i, yPro)){
-                                clearPath = false;
-                            }
-                        }
-                        if(clearPath == true){
-                            setDirection(down);
-                            moveTo(xPro-1, yPro); //takes a step towards him to the left
-                        }
-                    }
-                    numSquares = 0;
-                    return;
             }
-            }
-            //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman an.
             else{
-                numSquares = numSquares - 1;
-                //step 6
-                bool clear = false;
-                //cout << "NUM SQUARES " << numSquares << endl;
-                if(numSquares <= 0){ //when the reg pro has finished walking numSquares
-                    int randomNum = 0;
-                    int counter = 0; //to make sure the random number doesn't get chosen more than once
-                    while(counter != 4 && clear == false){
-                        randomNum = getWorld()->random(0,4, 'n');//chooses number from 0-4
-                        if(randomNum == 1 && earthBoulderCheck(xPro, yPro + 1)){
-                            setDirection(up);
-                            clear = true;
-                        }
-                        else if(randomNum == 2 && earthBoulderCheck(xPro, yPro - 1)){
-                            setDirection(down);
-                            clear = true;
-                        }
-                        else if(randomNum == 3 && earthBoulderCheck(xPro + 1, yPro)){
-                            setDirection(right);
-                            clear = true;
+                return;
+            }
+        }
+        //step 5
+        else if(getX() == getWorld()->getActorObjectX("Tunnelman") && (abs(tDistanceY) > 4)){ //same column but distance > 4
+            bool clearPath = true;
+            if(yPro < yTMan){ //when distance is negative tunnelman is above
+                for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from protestor to tunnelman
+                    if(earthBoulderCheck(xPro, yPro + i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                        clearPath = false;
+                    }
+                }
+                if(clearPath == true){
+                    setDirection(up);
+                    moveTo(xPro, yPro + 1); //takes a step towards him upwards
+                }
+            }
+            else if(yPro > yTMan){ //tunnelman is below
+                for(int i = 0; i < abs(tDistanceY); i++){ //checks the path from tunnelman to protester
+                    if(earthBoulderCheck(xPro, yPro - i)){ //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                        clearPath = false;
+                    }
+                }
+                if(clearPath == true){
+                    setDirection(down);
+                    moveTo(xPro, yPro - 1); //takes a step towards him downwards
+                }
+            }
+            numSquares = 0;
+            return;
+        }
+        else if(getY() == getWorld()->getActorObjectY("Tunnelman") && (abs(tDistanceX) > 4)){ //same row but distance > 4
+            bool clearPath = true;
+            if(xPro < xTMan){ //when distance is negative tunnelman is to the right
+                for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from protestor to tunnelman
+                    if(earthBoulderCheck(xPro + i, yPro) == false){ //checks if there is earth or a boulder in the way
+                        clearPath = false; //if there is stuff in the way, clearPath is false
+                    }
+                }
+                if(clearPath == true){
+                    setDirection(right);
+                    moveTo(xPro+1, yPro); //takes a step towards him to the right
+                }
+            }
+            else if(xPro > xTMan){ //tunnelman is left
+                for(int i = 0; i < abs(tDistanceX); i++){ //checks the path from tunnelman to protester
+                    if(earthBoulderCheck(xPro - i, yPro) == false){
+                        clearPath = false;
+                    }
+                }
+                
+                if(clearPath == true){
+                    setDirection(left);
+                    moveTo(xPro-1, yPro); //takes a step towards him to the left
+                }
+            }
+            numSquares = 0;
+            return;
+        }
+        //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
+        else{
+            numSquares = numSquares - 1;
 
-                        }
-                        else if(randomNum == 4 && earthBoulderCheck(xPro - 1, yPro)){
-                            setDirection(left);
-                            clear = true;
-                        }
-                        else{
-                            counter++;
-                        }
-                        cout  << endl << "new direction has been chosen"  << endl;
-                        perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
-                    }
-                    if(clear == false){
-                        cout << "there is a bug for step 6" << endl;
-                    }
-                    numSquares = getWorld()->random(8,60, 'n'); //random number btn 8 and 60
-                }
-                //step 7
-                else if (getWorld()->actorsInObjectHitBox(xPro+1, yPro, 0,0, "Earth") == -1 && getWorld()->actorsInObjectHitBox(xPro-1, yPro, 0,0, "Earth") == -1  && getWorld()->actorsInObjectHitBox(xPro, yPro + 1, 0,0, "Earth") == -1  && getWorld()->actorsInObjectHitBox(xPro, yPro -1 , 0,0, "Earth")  == -1){ //checks if it is in an intersection
-                    cout << "intersection" << endl;
-                    if(perpTurn == true ){
-                        if(getDirection() == up){ //facing up/down, perp directions: left and right
-                            if(earthBoulderCheck(xPro - 1, yPro)){ //if there is not an actor to the left
-                                setDirection(left);
-                            }
-                            else if(earthBoulderCheck(xPro + 1, yPro)){
-                                setDirection(right);
-                            }
-                            perpTurn = false;
-                        }
-                        else if(getDirection() == down){ //facing up/down, perp directions: left and right
-                            cout << "DOWN" << endl;
-                            if(earthBoulderCheck(xPro + 1, yPro) ){ //if there is not an actor to the left
-                                setDirection(right);
-                            }
-                            else if(earthBoulderCheck(xPro - 1, yPro)){
-                                setDirection(left);
-                            }
-                            perpTurn = false;
-                        }
-                        else if(getDirection() == right){ //facing right/left, perp directions: down and up
-                            if(earthBoulderCheck(xPro, yPro + 1)){ //if there is not an actor to the left
-                                setDirection(up);
-                            }
-                            else if(earthBoulderCheck(xPro, yPro - 1) ){
-                                setDirection(down);
-                            }
-                            perpTurn = false;
-                        }
-                        else if(getDirection() == left){ //facing right/left, perp directions: down and up
-                            if(earthBoulderCheck(xPro, yPro-1)){ //if there is not an actor to the left
-                                setDirection(down);
-                                cout << endl << "looks down in the beginning" << endl;
-                            }
-                            else if(earthBoulderCheck(xPro, yPro+1) ){
-                                setDirection(up);
-                            }
-                            perpTurn = false;
-                        }
-                        else{
-                            cout << "REALLY BAD FOR STEP 7" << endl;
-                        }
-                    }
-                }
-            }
-            //step 8 and checks bounds before moving too
-            if(getDirection() == up){
-                if(earthBoulderCheck(xPro, yPro + 1) && notPastBoundary(up)){
-                    if(yPro == 60){
-                        setDirection(down);
-                    }
-                    moveTo(getX(), getY() + 1);
-                }
-            }
-            else if(getDirection() == down){
-                if(earthBoulderCheck(xPro , yPro-1) && notPastBoundary(down)){
-                    if(yPro == 0){
+            //step 7
+            bool clear = false;
+            //cout << "NUM SQUARES " << numSquares << endl;
+            if(numSquares <= 0){ //when the reg pro has finished walking numSquares
+                while(clear == false){
+                    Direction randomDir = randomDirection(); //chooses random direction
+                    //checks if the direction is clear
+                    if(randomDir == up && earthBoulderCheck(xPro, yPro + 1)){
                         setDirection(up);
-                        cout << "please move up" << endl;
+                        clear = true;
                     }
-                    moveTo(getX(), getY() - 1);
-                }
-            }
-            else if(getDirection() == right){
-                if(earthBoulderCheck(xPro + 1, yPro) && notPastBoundary(right)){
-                    if(xPro == 63){
-                        setDirection(left);
+                    else if(randomDir == down && earthBoulderCheck(xPro, yPro - 1)){
+                        setDirection(down);
+                        clear = true;
                     }
-                    moveTo(getX() + 1, getY());
-                }
-            }
-            else if(getDirection() == left){
-                if(earthBoulderCheck(xPro-1, yPro) && notPastBoundary(left)){
-                    if(xPro == 2){ //ugly fix
-                        cout << "please move to the right" << endl;
+                    else if(randomDir == right && earthBoulderCheck(xPro + 1, yPro)){
                         setDirection(right);
-                        //moveTo(getX() +  1, getY());
+                        clear = true;
 
                     }
-                    moveTo(getX() - 1, getY());
+                    else if(randomDir == left && earthBoulderCheck(xPro - 1, yPro)){
+                        setDirection(left);
+                        clear = true;
+                    }
+                    perpTurn = false; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+                }
+                numSquares = getWorld()->random(8,60, 'n'); //random number btn 8 and 60
+            }
+            //step 7
+            else if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro,left)){//checks if it is in an intersection
+                cout << "intersection" << endl;
+                if(perpTurn == true ){
+                    if(dir == up){ //facing up/down, perp directions: left and right
+                        if(earthBoulderCheck(xPro - 1, yPro)){ //if there is not an actor to the left
+                            setDirection(left);
+                        }
+                        else if(earthBoulderCheck(xPro + 1, yPro)){
+                            setDirection(right);
+                        }
+                        perpTurn = false;
+                    }
+                    else if(dir == down){ //facing up/down, perp directions: left and right
+                        cout << "DOWN" << endl;
+                        if(earthBoulderCheck(xPro + 1, yPro) ){ //if there is not an actor to the left
+                            setDirection(right);
+                        }
+                        else if(earthBoulderCheck(xPro - 1, yPro)){
+                            setDirection(left);
+                        }
+                        perpTurn = false;
+                    }
+                    else if(dir == right){ //facing right/left, perp directions: down and up
+                        if(earthBoulderCheck(xPro, yPro + 1)){ //if there is not an actor to the left
+                            setDirection(up);
+                        }
+                        else if(earthBoulderCheck(xPro, yPro - 1) ){
+                            setDirection(down);
+                        }
+                        perpTurn = false;
+                    }
+                    else if(dir == left){ //facing right/left, perp directions: down and up
+                        if(earthBoulderCheck(xPro, yPro-1)){ //if there is not an actor to the left
+                            setDirection(down);
+                        }
+                        else if(earthBoulderCheck(xPro, yPro+1) ){
+                            setDirection(up);
+                        }
+                        perpTurn = false;
+                    }
+                    else{
+                        cout << "REALLY BAD FOR STEP 7" << endl;
+                    }
                 }
             }
         }
+        
     }
-    //step 9ish
-    else{
-        numSquares = 0;
-        ticks++; //keeps incrementing til the appropriate amt of ticks has elapsed
-        if(ticks % 15 == 0){ //every 15 reg pro can shout again
-            shout = true;
+    //step 8 and checks bounds before moving too
+    switch(dir){
+        case up:{
+            if(moveInDirection(xPro,yPro, up) && notPastBoundary(up)){
+                moveTo(xPro, yPro + 1);
+            }
+            else{
+                setDirection(down);
+            }
+            break;
         }
-        if(ticks % 200 == 0){ //every 200 reg pro can do a perpendicular turn again
-            perpTurn = true;
+        case down:{
+            if(moveInDirection(xPro,yPro, down) && notPastBoundary(down)){
+                moveTo(xPro, yPro - 1);
+            }
+            else{
+                setDirection(up);
+            }
+            break;
+        }
+        case right:{
+            if(moveInDirection(xPro,yPro, right) && notPastBoundary(right)){
+                moveTo(xPro + 1, yPro);
+            }
+            else{
+                cout << "ALL THE WAY IN THE TOP RIGHT CORNER " << endl;
+                setDirection(left);
+            }
+            break;
+        }
+        case left:{
+            if(xPro == 3){
+                cout << "ALL THE WAY IN THE TOP LEFT CORNER " << endl;
+                setDirection(right);
+                break;
+            }
+            else if(moveInDirection(xPro,yPro, left) && notPastBoundary(left)){
+                moveTo(xPro - 1, yPro);
+            }
+            break;
+        }
+        case none:{
+            cout << "bug in the movement code " << endl;
+            setDirection(none);
         }
     }
+
+//step 9
+if (!moveInDirection(xPro, yPro, dir)){ //if protestor cannot move in the direction it is facing
+    numSquares = 0; //force it to choose a new direction
+}
+    
 }
 
 //uses studentWorld hitbox function to check earth and boulder at the same time for protestor
 bool Protestor::earthBoulderCheck(int x, int y){
-    if(getWorld()->actorsInObjectHitBox(x, y, 4,4, "Earth") == 1 && getWorld()->actorsInObjectHitBox(x, y, 4,4, "Boulder") == -1){
+    //actor hitbox call made specifically for protestor and searching for earth and boulder
+    if(getWorld()->actorsInObjectHitBox(x, y, 0,0, "Boulder") == 0){
+        return false; //returns false if there is earth or boulder there
+    }
+    if(getWorld()->actorsInObjectHitBox(x, y, 4,4, "Earth") == 1)
+    {
         return false; 
     }
     return true;
-    
+}
+
+Actor::Direction Protestor::randomDirection() //returns a random direction
+{
+    int randomNumber = rand() % 4; //4 random directions possible
+    switch (randomNumber)
+    {
+        case 0:{
+            return up;
+            break;
+        }
+        case 1:{
+            return down;
+            break;
+        }
+        case 2:{
+            return left;
+            break;
+        }
+        case 3:{
+            return right;
+            break;
+        }
+    }
+    return none;
+}
+
+bool Protestor::moveInDirection(int x, int y, Direction dir){
+    switch(dir){
+        case up:{
+            return earthBoulderCheck(x,y+1); //will return false if you can't move up bc there is either earth or boulder there
+            break;
+        }
+        case down:{
+            return earthBoulderCheck(x, y-1);
+        }
+        case right:{
+
+            return earthBoulderCheck(x+1, y);
+            break;
+        }
+        case left:{
+            return earthBoulderCheck(x-1, y);
+            break;
+        }
+        case none: {
+            return none;
+            break;
+        }
+    }
+    return none;
+}
+
+bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir){
+    switch(dir){
+        case up:{
+            if(xP == xT && yP < yT){ //if the x same and yP is less than (under) tP than TRUE
+                return true;
+                break;
+            }
+            
+        case down:{
+            if(xP == xT && yP > yT){
+                return true;
+                break;
+            }
+        }
+        case right:{
+            if(xP < xT && yP == yT){
+                return true;
+                break;
+            }
+        }
+        case left:{
+            if(xP > xT && yP == yT){
+                cout << "Facing tunnelman to the left " << endl;
+                return true;
+                break;
+            }
+        }
+        case none:{
+            return false;
+        }
+    }
+    return false;
+
+    }
 }
 
 //Destructor

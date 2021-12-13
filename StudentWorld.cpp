@@ -389,14 +389,17 @@ int StudentWorld::actorsInObjectHitBox(int x, int y, int xHitBox, int yHitBox, s
         }
     }
     
-    if(yHitBox == 0 && xHitBox == 0 && objectType == "Earth"){ //for protestor to check the earth in front of it, hitbox will be 0,0
-        if(earthObjects[x][y] != nullptr){ //will return 1 if there is earth there
-            return 1;
+    //made specifically for protester
+    if(xHitBox == 0 && yHitBox == 0 && objectType == "Boulder"){ //will be called with xHitBox == 0 and yHitBox == 0 with Boulder as obj type
+        for (int i = 0; i < vActors.size(); i++) {
+            // If the calling object and the object we are searching for are within range
+            if ((abs(x - vActors[i]->getX()) <= 4 && abs(y - vActors[i]->getY() <= 4) && vActors[i]->objectType() == "Boulder")) {
+                return 0;
+            }
         }
-        else{
-            return 0; //0 for no earth
-        }
+        return 1; //returns 1 if there is no earth or boulder
     }
+    
     
     if (objectType == "Earth") {
         for (int i = 0; i < xHitBox; i++) {

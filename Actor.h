@@ -247,6 +247,12 @@ public:
     
     bool earthBoulderCheck(int,int);
     
+    Direction randomDirection();
+    
+    bool moveInDirection(int, int, Direction);
+    
+    bool facingDirection(int, int, int, int, Direction);
+    
     //virtual bool notPastBoundary(int);
 
     virtual ~Protestor();
@@ -256,7 +262,8 @@ private:
     int numSquares;
     int current_level_number;
     int ticksToWait;
-    int ticks = 0;
+    int shoutTicks = 15;
+    int perpTurnTicks = 200;
     bool leaveTheOil;
     int remainder = 0;
     bool shout = true; //can shout in the beginning
