@@ -136,6 +136,8 @@ public:
 
     virtual void doSomething();
 
+    virtual std::string objectType();
+
     // Destructor
     ~GoldNugget();
 };
@@ -188,7 +190,7 @@ public:
     // virtual void doSomething() = 0;    // Leaving this line to signify that we are still inheritting this function as a
                                           //    pure virtual function from Actor
                                        
-    /*virtual bool notPastBoundary();*/
+    virtual bool notPastBoundary(int);
     
     bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                      //    be a copy and paste of Actor.
@@ -237,5 +239,42 @@ private:
     //  - Item 2: Sonar Charges
     int inventory[3];
 };
+
+/****************************************
+Protestor Class
+****************************************/
+class Protestor : public Humanoid {
+public:
+    //default constructor
+    Protestor(StudentWorld*);
+
+    virtual void doSomething();
+
+    bool earthBoulderCheck(int, int);
+
+    Direction randomDirection();
+
+    bool moveInDirection(int, int, Direction);
+
+    bool facingDirection(int, int, int, int, Direction);
+
+    //virtual bool notPastBoundary(int);
+
+    virtual ~Protestor();
+
+private:
+    int hitPoints;
+    int numSquares;
+    int current_level_number;
+    int ticksToWait;
+    int shoutTicks = 15;
+    int perpTurnTicks = 200;
+    bool leaveTheOil;
+    int remainder = 0;
+    bool shout = true; //can shout in the beginning
+    bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
+
+};
+
 
 #endif // ACTOR_H_

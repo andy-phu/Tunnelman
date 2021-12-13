@@ -13,7 +13,6 @@ using namespace std;
 StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
     // Used for setting up any and all positions of game objects utilizing min
     // int min;
-    
     currLife = getLives();
     level = getLevel();
     // this gives the address of this StudentWorld object
@@ -39,14 +38,14 @@ int StudentWorld::init(){
     //push a pointer to an eart object into the vector in each array bucket
     //left of mine shaft in mid rows:0-29 cols:0-59
     for (int c = 0; c < 30; c++){
-        for (int r = 0; r< 59; r++){
+        for (int r = 0; r< 60; r++){
             earthObjects[c][r] = new Earth(c, r, this);
         }
     }
     
     //right of mine shaft
     for (int c = 34; c < 64; c++){
-        for (int r = 0; r< 59; r++){
+        for (int r = 0; r< 60; r++){
             earthObjects[c][r] = new Earth(c, r, this);
         }
     }
@@ -88,8 +87,6 @@ int StudentWorld::init(){
 
         // 20 to 56
         int randY = random(0, 56, 'Y');
-
-        cout << randX << " " << randY << endl;
 
         // Places boulder
         boulder = new Boulder(randX, randY, this);
@@ -144,6 +141,14 @@ int StudentWorld::init(){
 
         placeGoldNuggets(randX, randY, 0, this);
     }
+    
+    /********************
+    Place first protestor in the very first tick of each level
+    ********************/
+    regPro = new Protestor(this);
+    vActors.push_back(regPro);
+    int T = max(25, 200 - level);
+
 
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -176,7 +181,6 @@ int StudentWorld::move(){
             // There are no earth blocks in the hitbox of where the water pool wishes to
             //  spawn
             if (actorsInObjectHitBox(randX, randY, 4, 4, "Earth") == -1) {
-                cout << "Water Spawn Coords: " << randX << " " << randY << endl;
                 vActors.push_back(new WaterPool(randX, randY, this));
             }
         }
@@ -229,6 +233,8 @@ void StudentWorld::cleanUp() {
     }
 }
 
+// This function is used in tandem with the move() function and should thus only be called by said 
+//  function 
 void StudentWorld::removeDeadGameObjects() {
     Actor* temp;    // This will hold our object which we are to delete from memory
     int i = 0;
@@ -249,21 +255,28 @@ void StudentWorld::removeDeadGameObjects() {
     }
 }
 
+// This function is used in tandem with the move() function and should thus only be called by said 
+//  function 
 bool StudentWorld::playerDiedDuringThisTick() {
     // Check to see if our player has either died or lost a life
+
+    // If the player has hit escape then use this option
     if (getLives() != currLife) {
         // Update what life we're on
         currLife = getLives();
 
         return true;
     }
+    // If the players health has dropped to or below zero
     else if (tMan->isAnnoyed()) {
+        // Update what life we're on
         currLife = getLives();
         playSound(SOUND_PLAYER_GIVE_UP);
 
         return true;
     }
 
+    // The player has not died
     return false;
 }
 
@@ -310,6 +323,19 @@ void StudentWorld::digEarth(int x, int y) {
     }
 }
 
+// Utilized for Tunnelman inventory sonar ping
+void StudentWorld::sonarPing(int x, int y) {
+    // 
+    for (int i = 0; i < vActors.size(); i++) {
+        if (vActors[i]->objectType() == "GoldNugget" || vActors[i]->objectType() == "BarrelOfOil") {
+            // Use distance formula to determine the distance(radius) the object is from us
+            if (abs(vActors[i]->getX() - x) <= 12 && abs(vActors[i]->getY() - y) <= 12) {
+                vActors[i]->setVisible(true);
+            }
+        }
+    }
+}
+
 // Utilized by Boulder logic
 void StudentWorld::removeEarth(int x, int y) {
     if (earthObjects[x][y] != nullptr) {
@@ -317,7 +343,6 @@ void StudentWorld::removeEarth(int x, int y) {
         earthObjects[x][y] = nullptr;
     }
 }
-
 
 bool StudentWorld::isEarth(int x, int y) {
     // Check four squares of earth
@@ -379,6 +404,18 @@ int StudentWorld::actorsInObjectHitBox(int x, int y, int xHitBox, int yHitBox, s
         }
     }
 
+    // Made specifically for protestor
+    // Will be called with xHitBox == 0 and yHitBox == 0 with boulder as obj type
+    if (xHitBox == 0 && yHitBox == 0 && objectType == "Boulder") {
+        for (int i = 0; i < vActors.size(); i++) {
+            // If the calling object and the object we are searching for are within range
+            if ((abs(x - vActors[i]->getX()) <= 4 && abs(y - vActors[i]->getY() <= 4) && vActors[i]->objectType() == "Boulder")) {
+                return 0;
+            }
+        }
+        return 1; //returns 1 if there is no earth or boulder
+    }
+
 
     if (objectType == "Earth") {
         for (int i = 0; i < xHitBox; i++) {
@@ -423,9 +460,12 @@ int StudentWorld::numActorObject(string objectType) {
     return count;
 }
 
+// Update the inventory of the Tunnelman, this function is used for interaction between the Tunnelman's
+//  inventory and the inventory items
 void StudentWorld::inventoryUpdate(int item) {
     tMan->incrementInventoryCount(item);
 }
+
 
 void StudentWorld::dealDmg(int dmg, string objectType) {
     if (objectType == "Tunnelman") {
@@ -441,7 +481,7 @@ void StudentWorld::updateDisplayText() {
     
     level = getLevel();
     lives = getLives();
-    // health = tMan->getCurrentHealth();
+    health = tMan->getHitPoints();
     squirts = tMan->getInventoryCount(1);
     gold = tMan->getInventoryCount(0);
     barrelsLeft = numActorObject("BarrelOfOil");
@@ -453,7 +493,7 @@ void StudentWorld::updateDisplayText() {
     // Reference : https://www.cplusplus.com/reference/sstream/stringstream/stringstream/ , Accessed 12/11/2021
     displayText << "Lvl: " << setw(2) << to_string(level);
     displayText << "  Lives: " << setw(1) << lives;
-    // displayText << " Hlth " << setw(3) << health << "%";
+    displayText << " Hlth " << setw(3) << health * 10 << "%";
     displayText << "  Wtr: " << setw(2) << squirts;
     displayText << "  Gld: " << setw(2) << gold;
     displayText << "  Oil Left: " << setw(2) << barrelsLeft;
