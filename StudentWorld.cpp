@@ -653,20 +653,24 @@ void StudentWorld::proMove(int x, int y, Protester* pro) {
     if (pro->moveInDirection(x, y, GraphObject::right) && map[x + 1][y] < map[x][y])
     {
         pro->moveTo(x + 1, y); //moves right
+        pro->setDirection(GraphObject::right);
     }
 
     if (pro->moveInDirection(x, y, GraphObject::up) && map[x][y + 1] < map[x][y])
     {
         pro->moveTo(x, y+1); //moves up
+        pro->setDirection(GraphObject::up);
     }
 
     if (pro->moveInDirection(x, y, GraphObject::left) && map[x - 1][y] < map[x][y])
     {
-        pro->moveTo(x - 1, y); //moves left
+        pro->moveTo(x - 1, y); //moves left 
+        pro->setDirection(GraphObject::left);
     }
 
     if (pro->moveInDirection(x, y, GraphObject::down) && map[x][y - 1] < map[x][y])
     {
         pro->moveTo(x, y-1); //moves down
+        pro->setDirection(GraphObject::down);
     }
 }

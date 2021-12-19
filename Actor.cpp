@@ -642,14 +642,23 @@ void Protester::doSomething() {
         setDirection(right);
         return;
     }
-    if (xPro == 60) {
+    if (xPro == 60 && leaveTheOil == false) {
         //stuck in top left corner
         moveTo(xPro - 1, yPro);
         setDirection(left);
         return;
     }
 
+    if (yPro >= 64) {
+        moveTo(xPro, yPro - 1);
+        setDirection(down);
+        return;
+    }
+
+
     if (leaveTheOil == true) { //leave the oil phase
+        setDirection(right);
+        cout << "leave the oil " << leaveTheOil << endl;
         if (getX() == 60 && getY() == 60) { //at the exit point and can therefore leave
             setDead(); //set status to dead
         }
