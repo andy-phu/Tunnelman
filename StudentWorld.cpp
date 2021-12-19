@@ -276,7 +276,7 @@ bool StudentWorld::playerDiedDuringThisTick() {
         return true;
     }
     // If the players health has dropped to or below zero
-    else if (tMan->isAnnoyed()) {
+    else if (tMan->isAnnoyed(0)) {
         // Update what life we're on
         currLife = getLives();
         playSound(SOUND_PLAYER_GIVE_UP);
@@ -478,9 +478,10 @@ void StudentWorld::inventoryUpdate(int item) {
 void StudentWorld::dmgPro() {
     for (int i = 0; i < vActors.size(); i++) {
         if (vActors[i]->objectType() == "Protester") {
-            cout << " before hp " << vActors[i]->getHitPoints() << endl;
+            cout << "before hp" << vActors[i]->getHitPoints() << endl;
             dealDmg(vActors[i]->getX(), vActors[i]->getY(), -2, "Protester");
-            cout << " after hp " << vActors[i]->getHitPoints() << endl;
+            cout << "after hp" << vActors[i]->getHitPoints() << endl;
+            bool test = vActors[i]->isAnnoyed(-2);
         }
     }
 }

@@ -31,7 +31,9 @@ public:
 
     int getTick();
 
-    virtual int getHitPoints() { return 0; };
+    virtual int getHitPoints() { return 0;  };
+
+    virtual bool isAnnoyed(int) { return true; };
 
     virtual void setHitPoints(int) {}; //so that we can use the vector of actors to call this function that is specialized for humanoids
 
@@ -197,7 +199,7 @@ public:
     virtual bool notPastBoundary(int);
 
     
-    bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
+    virtual bool isAnnoyed(int);            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                      //    be a copy and paste of Actor.
 
     virtual int getHitPoints();
@@ -256,6 +258,10 @@ public:
     virtual std::string objectType();
 
     virtual void setLeave();
+
+    virtual bool isAnnoyed(int); 
+
+    void stun();
 
     virtual void doSomething();
 

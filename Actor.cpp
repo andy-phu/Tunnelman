@@ -383,7 +383,7 @@ bool Humanoid::notPastBoundary(int ch) {
     return true;
 }
 
-bool Humanoid::isAnnoyed() {
+bool Humanoid::isAnnoyed(int dmg) {
     if (hitPoints <= 0) {
         getWorld()->decLives();
         return true;
@@ -590,7 +590,7 @@ Protestor Class
 ****************************************/
 //Default Constructor
 Protester::Protester(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld) {
-    hitPoints = 5;
+    setHitPoints(5);
     leaveTheOil = false; //not in the oil field leave state
     current_level_number = getWorld()->getLevel(); //gets current level using getLevel game world function
     ticksToWait = max(0, 3 - current_level_number / 4); //formula found in pdf
@@ -613,6 +613,9 @@ void Protester::doSomething() {
     int tDistanceX = xPro - xTMan;
     int tDistanceY = yPro - yTMan;
     Direction dir = getDirection();
+
+
+   
 
     if (isDead()) { //if dead return immediately
         return;
@@ -972,6 +975,29 @@ bool Protester::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
 //SOURCE: https://stackoverflow.com/questions/27342362/how-to-create-a-circle-collision-detection-c/27342421
 bool Protester::radiusCheck(int xP, int yP, int xT, int yT, int radius) {
     return ((xP - xT) * (xP - xT) + (yP - yT) * (yP - yT)) < radius * radius;
+}
+
+
+bool Protester::isAnnoyed(int dmg) {
+    if (leaveTheOil == true) {
+        return true;
+    }
+    //means he is annoyed
+    //getWorld()->dmgPro(); //temporary for testing
+    getWorld()->playSound(SOUND_PROTESTER_ANNOYED);
+    stun(); //stuns protester for a certain amt of time
+    if(getHitPoints() <= 0){ 
+        getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+        leaveTheOil = true;
+        ticksToWait = 0;
+        return false; 
+        //TODO: point system later
+    }
+}
+
+void Protester::stun() {
+    int N = max(50, 100 - static_cast<int>(getWorld()->getLevel() * 10));
+    ticksToWait = N; //makes the ticks to wait the same stun time 
 }
 
 //Destructor
