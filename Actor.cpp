@@ -590,6 +590,10 @@ Protester::Protester(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, 
     numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
 }
 
+string Protester::objectType() {
+    return "Protester";
+}
+
 void Protester::doSomething() {
     int xPro = getX();
     int yPro = getY();
@@ -723,10 +727,10 @@ void Protester::doSomething() {
             numSquares = 0;
             return;
         }
+        numSquares = numSquares - 1;
         //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
         if(numSquares <= 0){
-            numSquares = numSquares - 1;
-
+           
             //step 7
             bool clear = false;
             //cout << "NUM SQUARES " << numSquares << endl;
@@ -744,7 +748,6 @@ void Protester::doSomething() {
                 else if (randomDir == right && earthBoulderCheck(xPro + 1, yPro)) {
                     setDirection(right);
                     clear = true;
-
                 }
                 else if (randomDir == left && earthBoulderCheck(xPro - 1, yPro)) {
                     setDirection(left);

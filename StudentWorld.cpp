@@ -18,7 +18,7 @@ StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
     // this gives the address of this StudentWorld object
     gWorld = this;
     tMan = nullptr;
-
+    ticks = 0;
     // Set all pointer objects to null so we avoid any errors, and fills in
     //  both the top and middle of our game grid
     for (int c = 0; c < 64; c++) {
@@ -29,9 +29,9 @@ StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
 }
 
 int StudentWorld::init(){
+    ticks = 0;
     //tunnelman object getting placed in right spot
     tMan = new Tunnelman(this);
-
     /********************
     Place all earth blocks and tunnel shaft
     ********************/
@@ -147,13 +147,13 @@ int StudentWorld::init(){
     ********************/
     regPro = new Protester(this);
     vActors.push_back(regPro);
-    int T = max(25, 200 - level);
-
-
+   
+   
     return GWSTATUS_CONTINUE_GAME;
 }
 
 int StudentWorld::move(){
+    int P = min(15, static_cast<int>(2 + level * 1.5));
     // UPDATE THE GAME STATUS LINE //
 
     // update the display text first as this also updates many of the private variables that the logic below
@@ -204,6 +204,11 @@ int StudentWorld::move(){
         playSound(SOUND_FINISHED_LEVEL);
         return GWSTATUS_FINISHED_LEVEL;
     }
+
+    //for protester spawning 
+    addingProtester();
+    
+
 
     // THE PLAYER HASN'T COMPLETED THE CURRENT LEVEL AND HASN'T DIED
     //  LET THEM CONTINUE PLAYING THE CURRENT LEVEL
@@ -475,6 +480,20 @@ void StudentWorld::dealDmg(int dmg, string objectType) {
 
     //}
 }
+
+
+void StudentWorld::addingProtester() {
+    int T = max(25, 200 - level);
+    int P = min(15, static_cast <int>(2 +  level * 1.5));
+    if(ticks > T && numActorObject("Protester") < P) {
+        cout << " new protester " << endl;
+        regPro = new Protester(this);
+        vActors.push_back(regPro);
+        ticks = 0;
+    }
+    ticks++;
+}
+
 
 void StudentWorld::updateDisplayText() {
     stringstream displayText;

@@ -42,6 +42,8 @@ public:
 
     void sonarPing(int, int);
 
+    void addingProtester();
+
     virtual void removeEarth(int, int);
 
     bool isEarth(int, int);
@@ -74,8 +76,8 @@ private:
     Boulder* boulder;
     Protester* regPro;
 
+    int ticks;
     int currLife;
-    int T;
     int level;
     int lives;
     int health;
@@ -87,8 +89,6 @@ private:
 
     // Keeps track of all actor pointers
     std::vector<Actor*> vActors;
-
-    int ticks = 0;
 };
 
 #endif // STUDENTWORLD_H_

@@ -248,6 +248,9 @@ public:
     //default constructor
     Protester(StudentWorld*);
 
+    virtual std::string objectType();
+
+
     virtual void doSomething();
 
     bool earthBoulderCheck(int, int);
