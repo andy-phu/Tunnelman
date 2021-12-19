@@ -60,11 +60,17 @@ public:
 
     virtual void inventoryUpdate(int);
 
-    void dealDmg(int, std::string);
+    void dealDmg(int, int, int, std::string);
 
     virtual void updateDisplayText();
 
     virtual int random(int, int, char);
+
+    void exit(Protester* pro);
+
+    void proMove(int, int, Protester*);
+
+    void dmgPro();
 
     // Destructor
     ~StudentWorld();
@@ -86,6 +92,19 @@ private:
     int barrelsLeft;
     int sonar;
     int score;
+
+    //for maze solver
+    int map[64][64];
+
+    struct grid
+    {
+        int x;
+        int y;
+        grid(int col, int row){
+            x = col;
+            y = row;
+        }
+    };
 
     // Keeps track of all actor pointers
     std::vector<Actor*> vActors;

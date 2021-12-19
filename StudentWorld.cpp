@@ -2,12 +2,15 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <queue>
 #include <vector>
 #include "Actor.h"  // We use this in the .cpp file instead of .h file due to wanting the actual implementation of Actor.h
                     //  classes, member functions and the like to be imported into this file for actual use. Due to coding
                     //  actual implementation of classes and the likes of StudentWorld.h in this file. -- Note line 9 in 
                     //  StudentWorld.h for further explanation. --
 #include <memory>
+
+
 using namespace std;
 
 StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
@@ -471,14 +474,28 @@ void StudentWorld::inventoryUpdate(int item) {
     tMan->incrementInventoryCount(item);
 }
 
+//test to see if the maze solver works
+void StudentWorld::dmgPro() {
+    for (int i = 0; i < vActors.size(); i++) {
+        if (vActors[i]->objectType() == "Protester") {
+            cout << " before hp " << vActors[i]->getHitPoints() << endl;
+            dealDmg(vActors[i]->getX(), vActors[i]->getY(), -2, "Protester");
+            cout << " after hp " << vActors[i]->getHitPoints() << endl;
+        }
+    }
+}
 
-void StudentWorld::dealDmg(int dmg, string objectType) {
+void StudentWorld::dealDmg(int x, int y, int dmg, string objectType) { //put x and y 0 for tunnelman dmg
     if (objectType == "Tunnelman") {
         tMan->setHitPoints(dmg);
     }
-    //else if (objectType == "Protestor") {
-
-    //}
+    else if (objectType == "Protester") {
+        for (int i = 0; i < vActors.size(); i++) {
+            if (vActors[i]->objectType() == objectType && vActors[i]->getX() == x && vActors[i]->getY() == y) { //tries to get the specific protester to dmg
+                vActors[i]->setHitPoints(dmg);
+            }
+        }
+    }
 }
 
 
@@ -573,4 +590,82 @@ int StudentWorld::random(int min, int max, char xOrY) {
     return min + rand() % ((max + 1) - min);
 }
 
-// Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp
+void StudentWorld::exit(Protester* pro)
+{
+    //fill the map with all 0's in the beginning
+    for (int i = 0; i < 64; i++)
+    {
+        for (int j = 0; j < 64; j++)
+        {
+            map[i][j] = 0;
+        }
+    }
+
+    int proX = pro->getX();
+    int proY = pro->getY();
+
+    queue<grid> temp;
+    temp.push(grid(60, 60));
+    map[60][60] = 1; //exit
+
+    while (!temp.empty()) 
+    {
+        grid temp2 = temp.front(); 
+        temp.pop();
+        int x = temp2.x;
+        int y = temp2.y;
+
+        if (map[x + 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::right))
+        {
+            map[x + 1][y] = 1 + map[x][y];
+            temp.push(grid(x + 1, y)); 
+        }
+        
+        if (map[x - 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::left))
+        {
+            map[x - 1][y] = 1 + map[x][y];
+            temp.push(grid(x - 1, y)); 
+        }
+       
+        if (map[x][y - 1] == 0 && pro->moveInDirection(x, y, GraphObject::down))
+        {
+            map[x][y - 1] = 1 + map[x][y];
+            temp.push(grid(x, y - 1));
+        }
+        
+        if (map[x][y + 1] == 0 && pro->moveInDirection(x, y, GraphObject::up))
+        {
+            map[x][y + 1] = 1 + map[x][y];
+            temp.push(grid(x, y + 1)); 
+        }
+
+    }
+
+    proMove(proX, proY, pro);
+
+    return;
+
+}
+
+
+void StudentWorld::proMove(int x, int y, Protester* pro) {
+    if (pro->moveInDirection(x, y, GraphObject::right) && map[x + 1][y] < map[x][y])
+    {
+        pro->moveTo(x + 1, y); //moves right
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::up) && map[x][y + 1] < map[x][y])
+    {
+        pro->moveTo(x, y+1); //moves up
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::left) && map[x - 1][y] < map[x][y])
+    {
+        pro->moveTo(x - 1, y); //moves left
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::down) && map[x][y - 1] < map[x][y])
+    {
+        pro->moveTo(x, y-1); //moves down
+    }
+}

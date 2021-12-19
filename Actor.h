@@ -31,6 +31,10 @@ public:
 
     int getTick();
 
+    virtual int getHitPoints() { return 0; };
+
+    virtual void setHitPoints(int) {}; //so that we can use the vector of actors to call this function that is specialized for humanoids
+
     void incrementTick();
 
     // Destructor
@@ -191,15 +195,16 @@ public:
                                           //    pure virtual function from Actor
                                        
     virtual bool notPastBoundary(int);
+
     
     bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                      //    be a copy and paste of Actor.
 
-    int getHitPoints();
+    virtual int getHitPoints();
 
     // This function will be used to both set default Hit Points value upon spawn
     //  and also deal dmg to the objects hit points. 
-    void setHitPoints(int);
+    virtual void setHitPoints(int);
 
     // Destructor
     virtual ~Humanoid();
@@ -250,6 +255,7 @@ public:
 
     virtual std::string objectType();
 
+    virtual void setLeave();
 
     virtual void doSomething();
 

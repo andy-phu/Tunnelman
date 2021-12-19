@@ -29,6 +29,7 @@ string Actor::objectType() {
     return "Actor";
 }
 
+
 void Actor::setDead() {
     dead = true;
     setVisible(false);
@@ -110,7 +111,7 @@ void Boulder::doSomething() {
             moveTo(getX(), getY() - 1);
         }
         else if (getWorld()->actorsInObjectHitBox(getX(), getY(), 3, 3, "Tunnelman") != -1) {
-            getWorld()->dealDmg(-100, "Tunnelman");
+            getWorld()->dealDmg(0,0, -100, "Tunnelman");
         }
 
         else {
@@ -183,6 +184,8 @@ invenItems Abstract Base Class
 ****************************************/
 invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
     Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
+
+
 
 int invenItems::getObjectState() {
     return objectState;
@@ -498,6 +501,10 @@ void Tunnelman::doSomething() {
                 }
 
                 break;
+            case 'o':
+                cout << "o is pressed" << endl;
+                getWorld()->dmgPro();
+                break;
             case 'q':
                 exit(0);
 
@@ -594,6 +601,10 @@ string Protester::objectType() {
     return "Protester";
 }
 
+void Protester::setLeave() {
+    leaveTheOil = true; 
+}
+
 void Protester::doSomething() {
     int xPro = getX();
     int yPro = getY();
@@ -639,9 +650,10 @@ void Protester::doSomething() {
         if (getX() == 60 && getY() == 60) { //at the exit point and can therefore leave
             setDead(); //set status to dead
         }
-        //            else{
-        //                //TODO: breadth first search to find the exit
-        //            }
+        else {
+            getWorld()->exit(this); //calls function to move the protester one step closer to the exit every round
+            return;
+        }
     }
     else { //not trying to leave and all interactions with tunnelman
         //if i can see tunnelman
@@ -652,7 +664,7 @@ void Protester::doSomething() {
                 if (shoutTicks > 15) { //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
                     getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
                     //TODO: deduct two hit points from tunnelman
-                    getWorld()->dealDmg(-2, "Tunnelman");
+                    getWorld()->dealDmg(0,0,-2, "Tunnelman"); 
                     //cout << "YELLING AT TUNNELMAN " << endl;
                     shoutTicks = 0; //can't shout again for another 15 non resting ticks
                     return;
@@ -737,19 +749,19 @@ void Protester::doSomething() {
             while (clear == false) {
                 Direction randomDir = randomDirection(); //chooses random direction
                 //checks if the direction is clear
-                if (randomDir == up && earthBoulderCheck(xPro, yPro + 1)) {
+                if (randomDir == up && earthBoulderCheck(xPro, yPro + 1) && notPastBoundary(up)) {
                     setDirection(up);
                     clear = true;
                 }
-                else if (randomDir == down && earthBoulderCheck(xPro, yPro - 1)) {
+                else if (randomDir == down && earthBoulderCheck(xPro, yPro - 1) && notPastBoundary(down)) {
                     setDirection(down);
                     clear = true;
                 }
-                else if (randomDir == right && earthBoulderCheck(xPro + 1, yPro)) {
+                else if (randomDir == right && earthBoulderCheck(xPro + 1, yPro) && notPastBoundary(right)) {
                     setDirection(right);
                     clear = true;
                 }
-                else if (randomDir == left && earthBoulderCheck(xPro - 1, yPro)) {
+                else if (randomDir == left && earthBoulderCheck(xPro - 1, yPro) && notPastBoundary(left)) {
                     setDirection(left);
                     clear = true;
                 }
@@ -830,14 +842,12 @@ void Protester::doSomething() {
             moveTo(xPro + 1, yPro);
         }
         else {
-            cout << "ALL THE WAY IN THE TOP RIGHT CORNER " << endl;
             setDirection(left);
         }
         break;
     }
     case left: {
         if (xPro == 3) {
-            cout << "ALL THE WAY IN THE TOP LEFT CORNER " << endl;
             setDirection(right);
             break;
         }
@@ -945,7 +955,6 @@ bool Protester::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
     }
     case left: {
         if (xP > xT && yP == yT) {
-            cout << "Facing tunnelman to the left " << endl;
             return true;
             break;
         }
