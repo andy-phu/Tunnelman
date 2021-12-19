@@ -136,6 +136,8 @@ public:
 
     virtual void doSomething();
 
+    virtual std::string objectType();
+
     // Destructor
     ~GoldNugget();
 };
@@ -218,8 +220,8 @@ public:
 
     virtual void doSomething();
 
-    //virtual bool notPastBoundary(int);
-    
+    virtual bool notPastBoundary(int);
+
     virtual int getInventoryCount(int);
 
     virtual void incrementInventoryCount(int);
@@ -238,26 +240,29 @@ private:
     int inventory[3];
 };
 
-class Protestor : public Humanoid {
+/****************************************
+Protestor Class
+****************************************/
+class Protester : public Humanoid {
 public:
     //default constructor
-    Protestor(StudentWorld*);
+    Protester(StudentWorld*);
 
     virtual void doSomething();
-    
-    bool earthBoulderCheck(int,int);
-    
+
+    bool earthBoulderCheck(int, int);
+
     Direction randomDirection();
-    
+
     bool moveInDirection(int, int, Direction);
-    
+
     bool facingDirection(int, int, int, int, Direction);
-    
-    bool radiusCheck(int, int, int, int, int, int);
-    
+
+    bool radiusCheck(int, int, int, int, int);
+
     //virtual bool notPastBoundary(int);
 
-    virtual ~Protestor();
+    virtual ~Protester();
 
 private:
     int hitPoints;
@@ -267,9 +272,11 @@ private:
     int shoutTicks = 15;
     int perpTurnTicks = 200;
     bool leaveTheOil;
+    int remainder = 0;
     bool shout = true; //can shout in the beginning
     bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
-    
+
 };
+
 
 #endif // ACTOR_H_

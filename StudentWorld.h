@@ -14,7 +14,7 @@ class Tunnelman;    // Here we only use class forwarding as we don't actually co
 class Earth;
 class Actor;
 class Boulder;
-class Protestor;
+class Protester;
 
 class StudentWorld : public GameWorld
 {
@@ -38,7 +38,9 @@ public:
 
     void placeGoldNuggets(int, int, int, StudentWorld*);
 
-    virtual void digEarth(int, int);
+    void digEarth(int, int);
+
+    void sonarPing(int, int);
 
     virtual void removeEarth(int, int);
 
@@ -70,8 +72,8 @@ private:
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
     Boulder* boulder;
-    Protestor* regPro;
-    
+    Protester* regPro;
+
     int currLife;
     int T;
     int level;
