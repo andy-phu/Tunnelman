@@ -589,7 +589,7 @@ Tunnelman::~Tunnelman() {}
 Protestor Class
 ****************************************/
 //Default Constructor
-Protester::Protester(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld) {
+Protester::Protester(StudentWorld* tempWorld, int ID) : Humanoid(ID, 60, 60, left, 1.0, 0, tempWorld) {
     setHitPoints(5);
     leaveTheOil = false; //not in the oil field leave state
     current_level_number = getWorld()->getLevel(); //gets current level using getLevel game world function
@@ -636,7 +636,7 @@ void Protester::doSomething() {
     }
     shoutTicks++;
     perpTurnTicks++;
-    cout << "perpTurnTicks " << perpTurnTicks << endl;
+    //cout << "perpTurnTicks " << perpTurnTicks << endl;
     if (xPro == 3) {
         //stuck in top left corner
         moveTo(xPro + 1, yPro);
@@ -667,7 +667,7 @@ void Protester::doSomething() {
             setDead(); //set status to dead
         }
         else {
-            getWorld()->exit(this, xPro, yPro); //calls function to move the protester one step closer to the exit every round
+            getWorld()->exit(this, xPro, yPro, "exit"); //calls function to move the protester one step closer to the exit every round
             return;
         }
     }
@@ -691,7 +691,14 @@ void Protester::doSomething() {
                 return;
             }
         }
-        //step 5
+        if (getID() == TID_HARD_CORE_PROTESTER && (tDistanceX > 4 || tDistanceY > 4) ) { //for hardcore protesters that are more than 4 units away from the tunnelman
+            int M = 16 + static_cast<int>(current_level_number * 20);
+            if (tDistanceX <= M || tDistanceY <= M) { //If the Hardcore Protester is less than or equal to a total of M legal horizontal or vertical moves
+                getWorld()->exit(this,xPro, yPro, "find"); //reuse the code but this time mark the tunnelman
+            }
+        }
+
+        //step 5 for regular protesters 
         if (getX() == getWorld()->getActorObjectX("Tunnelman") && radiusCheck(xPro, yPro, xTMan, yTMan, 4)) { //same column but distance > 4
             cout << "test" << endl;
             bool clearPath = true;
@@ -1009,3 +1016,15 @@ void Protester::stun() {
 
 //Destructor
 Protester::~Protester() {}
+
+
+/****************************************
+Hardcore Protester Class
+****************************************/
+HardcoreProtester::HardcoreProtester(StudentWorld* tempWorld, int ID) : Protester(tempWorld, ID) {
+    setHitPoints(20);
+};
+
+string HardcoreProtester::objectType() {
+    return "HardcoreProtester";
+}

@@ -253,7 +253,7 @@ Protestor Class
 class Protester : public Humanoid {
 public:
     //default constructor
-    Protester(StudentWorld*);
+    Protester(StudentWorld*, int);
 
     virtual std::string objectType();
 
@@ -293,6 +293,19 @@ private:
     bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
 
 };
+
+/****************************************
+Hardcore Protester Class
+****************************************/
+class HardcoreProtester : public Protester {
+public:
+    HardcoreProtester(StudentWorld*, int);
+    virtual std::string objectType();
+    virtual ~HardcoreProtester() {};
+
+private:
+};
+
 
 
 #endif // ACTOR_H_

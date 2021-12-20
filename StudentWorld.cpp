@@ -148,7 +148,7 @@ int StudentWorld::init(){
     /********************
     Place first protester in the very first tick of each level
     ********************/
-    regPro = new Protester(this);
+    regPro = new Protester(this, TID_PROTESTER);
     vActors.push_back(regPro);
    
    
@@ -503,9 +503,16 @@ void StudentWorld::dealDmg(int x, int y, int dmg, string objectType) { //put x a
 void StudentWorld::addingProtester() {
     int T = max(25, 200 - level);
     int P = min(15, static_cast <int>(2 +  level * 1.5));
-    if(ticks > T && numActorObject("Protester") < P) {
-        cout << " new protester " << endl;
-        regPro = new Protester(this);
+    int probabilityOfHardcore = min(90, static_cast<int>(level * 10) + 10);
+    int hardcoreRand = random(0, probabilityOfHardcore, 'r');
+    if(ticks > T && (numActorObject("Protester") + numActorObject("HardcoreProtester")) < P) {
+        if (hardcoreRand == probabilityOfHardcore) { //the 1 in a probabilityOfHardcore chance
+            cout << " random: " << hardcoreRand << " end: " << probabilityOfHardcore << endl;
+            hardPro = new HardcoreProtester(this, TID_HARD_CORE_PROTESTER);
+            vActors.push_back(hardPro);
+        }
+        cout << " random: " << hardcoreRand << " end: " << probabilityOfHardcore << endl;
+        regPro = new Protester(this, TID_PROTESTER);
         vActors.push_back(regPro);
         ticks = 0;
     }
@@ -545,7 +552,7 @@ void StudentWorld::updateDisplayText() {
 }
 
 //Reference: https://www.daniweb.com/programming/software-development/threads/438384/solving-a-maze-with-queues
-void StudentWorld::exit(Protester* pro, int proX, int proY)
+void StudentWorld::exit(Protester* pro, int proX, int proY, string s)
 {
 
     for (int x = 0; x < 64; x++)
@@ -556,9 +563,19 @@ void StudentWorld::exit(Protester* pro, int proX, int proY)
         }
     }
 
+
     queue<grid> qGrid;
-    qGrid.push(grid(60, 60)); //this is the exit point
-    map[60][60] = 1; //exit
+    if (s == "exit") { //marks the actual exit
+        qGrid.push(grid(60, 60)); //this is the exit point
+        map[60][60] = 1; //exit
+    }
+    else if (s == "find") { //marks tunnelmans location as the exit
+        int xT = getActorObjectX("Tunnelman");
+        int yT = getActorObjectX("Tunnelman");
+        qGrid.push(grid(xT, yT)); //this is the exit point
+        map[xT][yT] = 1; //the goal
+    }
+   
 
     while (!qGrid.empty()) //iterates till the queue is empty and looks at all directions for an open spot
     {

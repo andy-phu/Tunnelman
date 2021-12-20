@@ -15,6 +15,8 @@ class Earth;
 class Actor;
 class Boulder;
 class Protester;
+class HardcoreProtester;
+class GraphObject;
 
 class StudentWorld : public GameWorld
 {
@@ -66,8 +68,8 @@ public:
 
     virtual int random(int, int, char);
 
-    void exit(Protester*, int, int);
-
+    void exit(Protester*, int, int, std::string);
+    
     void proMove(int, int, Protester*);
 
     void dmgPro();
@@ -81,6 +83,7 @@ private:
     GameWorld* gWorld;
     Boulder* boulder;
     Protester* regPro;
+    HardcoreProtester* hardPro;
 
     int ticks;
     int currLife;
