@@ -261,7 +261,7 @@ public:
 
     virtual void setLeave();
 
-    virtual bool isAnnoyed(int);
+    virtual bool isAnnoyed();
 
     void stun();
 

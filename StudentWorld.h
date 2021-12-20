@@ -15,7 +15,7 @@ class Earth;
 class Actor;
 class Boulder;
 class Protester;
-class HardcoreProtestor;
+class HardcoreProtester;
 
 //enum Direction;
 

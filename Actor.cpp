@@ -1081,7 +1081,7 @@ bool Protester::radiusCheck(int xP, int yP, int xT, int yT, int radius) {
 }
 
 
-bool Protester::isAnnoyed(int dmg) {
+bool Protester::isAnnoyed() {
     if (leaveTheOil == true) {
         return true;
     }

@@ -490,7 +490,7 @@ bool StudentWorld::splashProtestors(int x, int y) {
     // Look through every object in actor to ensure we splash every protestor/hardcore protestor
     while (it != vActors.end()) {
         // Look for hardcore/reg protestors
-        if ((*it)->objectType() == "Protester" || (*it)->objectType() == "HardcoreProtestor") {
+        if ((*it)->objectType() == "Protester" || (*it)->objectType() == "HardcoreProtester") {
             // If we're within their hitbox
             if (abs(x - (*it)->getX()) <= 3 && abs(y - (*it)->getY()) <= 3) {
                 // The protestor has zero health, thus they are annoyed
@@ -537,7 +537,6 @@ void StudentWorld::dealDmg(int x, int y, int dmg, string objectType) { //put x a
         tMan->setHitPoints(dmg);
     }
 }
-
 
 void StudentWorld::addingProtester() {
     int T = max(25, 200 - level);
@@ -601,17 +600,19 @@ void StudentWorld::exit(Protester* pro, int proX, int proY, string s)
         }
     }
 
+
     queue<grid> qGrid;
-    if (s == "exit") {  //marks teh actual exit
-        qGrid.push(grid(60, 60));   // This is the exit point
-        map[60][60] = 1;    //exit
+    if (s == "exit") { //marks the actual exit
+        qGrid.push(grid(60, 60)); //this is the exit point
+        map[60][60] = 1; //exit
     }
     else if (s == "find") { //marks tunnelmans location as the exit
         int xT = getActorObjectX("Tunnelman");
-        int yT = getActorObjectY("Tunnelman");
-        qGrid.push(grid(xT, yT));   //this is the exit point
-        map[xT][yT] = 1;    //the goal
+        int yT = getActorObjectX("Tunnelman");
+        qGrid.push(grid(xT, yT)); //this is the exit point
+        map[xT][yT] = 1; //the goal
     }
+
 
     while (!qGrid.empty()) //iterates till the queue is empty and looks at all directions for an open spot
     {
@@ -648,8 +649,6 @@ void StudentWorld::exit(Protester* pro, int proX, int proY, string s)
     return;
 
 }
-
-
 
 GameWorld* StudentWorld::getWorld(){
     return gWorld;
