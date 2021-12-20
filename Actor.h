@@ -29,6 +29,14 @@ public:
 
     virtual bool isDead();
 
+    // The below three functions until setHitPoints are used as stand ins so that splashProtestor can call these functions and then look for 
+    //  their most derived version of the func.
+    virtual int getHitPoints();
+
+    virtual bool isAnnoyed();
+
+    virtual void setHitPoints(int);
+
     int getTick();
 
     void incrementTick();
@@ -74,7 +82,6 @@ public:
 private:
     int state;
     int ticks = 0;
-    Tunnelman* playerObj;
 };
 
 /****************************************
@@ -104,7 +111,8 @@ public:
 
     virtual ~Squirt();
 private:
-    int travelDistance = 4;
+    int travelDistance;
+    Direction dir;
 };
 
 /****************************************
@@ -191,15 +199,16 @@ public:
                                           //    pure virtual function from Actor
                                        
     virtual bool notPastBoundary(int);
+
     
     bool isAnnoyed();            // TODO: Will not implement this yet, leaving in to show this is not just going to
                                      //    be a copy and paste of Actor.
 
-    int getHitPoints();
+    virtual int getHitPoints();
 
     // This function will be used to both set default Hit Points value upon spawn
     //  and also deal dmg to the objects hit points. 
-    void setHitPoints(int);
+    virtual void setHitPoints(int);
 
     // Destructor
     virtual ~Humanoid();
@@ -243,10 +252,18 @@ private:
 /****************************************
 Protestor Class
 ****************************************/
-class Protestor : public Humanoid {
+class Protester : public Humanoid {
 public:
     //default constructor
-    Protestor(StudentWorld*);
+    Protester(StudentWorld*, int);
+
+    virtual std::string objectType();
+
+    virtual void setLeave();
+
+    virtual bool isAnnoyed(int);
+
+    void stun();
 
     virtual void doSomething();
 
@@ -258,9 +275,12 @@ public:
 
     bool facingDirection(int, int, int, int, Direction);
 
+    bool radiusCheck(int, int, int, int, int);
+
+
     //virtual bool notPastBoundary(int);
 
-    virtual ~Protestor();
+    virtual ~Protester();
 
 private:
     int hitPoints;
@@ -274,6 +294,18 @@ private:
     bool shout = true; //can shout in the beginning
     bool perpTurn = true; //checks to see if there has been a perpendicular turn that has been made in the last 200 non resting ticks
 
+};
+
+/****************************************
+Hardcore Protester Class
+****************************************/
+class HardcoreProtester : public Protester {
+public:
+    HardcoreProtester(StudentWorld*, int);
+    virtual std::string objectType();
+    virtual ~HardcoreProtester() {};
+
+private:
 };
 
 

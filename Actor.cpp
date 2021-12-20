@@ -29,6 +29,7 @@ string Actor::objectType() {
     return "Actor";
 }
 
+
 void Actor::setDead() {
     dead = true;
     setVisible(false);
@@ -36,6 +37,19 @@ void Actor::setDead() {
 
 bool Actor::isDead() {
     return dead;
+}
+
+// The below three functions are dummy functions and are just to be used for calling in splashProtestor
+int Actor::getHitPoints() {
+    return 0;
+}
+
+bool Actor::isAnnoyed() {
+    return false;
+}
+
+void Actor::setHitPoints(int dmg) {
+    return;
 }
 
 int Actor::getTick() {
@@ -87,7 +101,7 @@ void Boulder::doSomething() {
     // Stable state action checks
     if (state == 1) {
         // If there is earth below boulder
-        if ((getWorld()->isEarth(getX(), getY() - 1))) {
+        if ((getWorld()->isEarth(getX(), getY() - 1, objectType()))) {
             return;
         }
         // No earth below boulder
@@ -106,11 +120,11 @@ void Boulder::doSomething() {
     // Falling state
     else if (state == 3) {
         // Keeps moving down each tick
-        if (getY() != 0 && !getWorld()->isEarth(getX(), getY() - 1) && getWorld()->actorsInObjectHitBox(getX(), getY(), 4, 4, "Boulder") == -1) {
+        if (getY() != 0 && !getWorld()->isEarth(getX(), getY() - 1, objectType()) && getWorld()->actorsInObjectHitBox(getX(), getY(), 4, 4, "Boulder") == -1) {
             moveTo(getX(), getY() - 1);
         }
         else if (getWorld()->actorsInObjectHitBox(getX(), getY(), 3, 3, "Tunnelman") != -1) {
-            getWorld()->dealDmg(-100, "Tunnelman");
+            getWorld()->dealDmg(0,0, -100, "Tunnelman");
         }
 
         else {
@@ -166,9 +180,51 @@ BarrelOfOil::~BarrelOfOil() {}
 /****************************************
 Squirt Class
 ****************************************/
-Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {}
+Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* tempWorld) : Actor(TID_WATER_SPURT, startX, startY, dir, 1.0, 1, tempWorld) {
+   // Travel distance 8 == 4 squares away
+    travelDistance = 8;
+    this->dir = dir;
+}
 
 void Squirt::doSomething() {
+    // If we have hit a reg/hardcore protestor, set state to dead
+    if (getWorld()->splashProtestors(getX(), getY())) {
+        setDead();
+    }
+    // We have moved as far as we physically can
+    else if (travelDistance == 0) {
+        setDead();
+    }
+    // We are to keep moving forward
+    else if (travelDistance != 0) {
+        switch (dir) {
+        case left:
+            if (!getWorld()->isEarth(getX() - 1, getY(), objectType()) && !getWorld()->isBoulder(getX() - 4, getY(), left)) {
+                moveTo(getX() - 1, getY());
+            }
+            break;
+        case right:
+            // use +4 instead of +1 due to size of tunnelman graphic, origin of x when looking right is -4 from 
+            //  right side of tunnelman's right side of graphic.
+            if (!getWorld()->isEarth(getX() + 4, getY(), objectType()) && !getWorld()->isBoulder(getX() + 4, getY(), right)) {
+                moveTo(getX() + 1, getY());
+            }
+            break;
+        case up:
+            // use +4 instead of +1 due to size of tunnelman graphic, origin of x when looking up is -4 from 
+            //  top side of tunnelman's top side of graphic.
+            if (!getWorld()->isEarth(getX(), getY() + 4, objectType()) && !getWorld()->isBoulder(getX(), getY() + 4, up)) {
+                moveTo(getX(), getY() + 1);
+            }
+            break;
+        case down:
+            if (!getWorld()->isEarth(getX(), getY() - 1, objectType()) && !getWorld()->isBoulder(getX(), getY() - 4, down)) {
+                moveTo(getX(), getY() - 1);
+            }
+            break;
+        }
+        --travelDistance;
+    }
 
 }
 
@@ -183,6 +239,8 @@ invenItems Abstract Base Class
 ****************************************/
 invenItems::invenItems(int imageID, int startX, int startY, Direction startDirection, float size = 1.0, unsigned int depth = 0, StudentWorld* tempWorld = nullptr) :
     Actor(imageID, startX, startY, startDirection, size, depth, tempWorld) {}
+
+
 
 int invenItems::getObjectState() {
     return objectState;
@@ -231,7 +289,7 @@ void GoldNugget::doSomething() {
         getWorld()->inventoryUpdate(0);
     }
 
-    // TODO: Logic for protestors
+    //// TODO: Logic for protestors
     //else if (getObjectState() == 1) {
 
     //    // If there are protestors then we need to go through each one to see if they are
@@ -424,7 +482,7 @@ void Tunnelman::doSomething() {
     if (getWorld()->getKey(ch) == true) {
         switch(ch){
             case KEY_PRESS_LEFT:
-                
+            case 'a':
                 if (getDirection() != left) {
                     setDirection(left);
 
@@ -437,6 +495,7 @@ void Tunnelman::doSomething() {
 
                 break;
             case KEY_PRESS_RIGHT:
+            case 'd':
                 if (getDirection() != right) {
                     setDirection(right);
 
@@ -450,6 +509,7 @@ void Tunnelman::doSomething() {
                 
                 break;
             case KEY_PRESS_UP:
+            case 'w':
                 if (getDirection() != up) {
                     setDirection(up);
 
@@ -463,6 +523,7 @@ void Tunnelman::doSomething() {
 
                 break;
             case KEY_PRESS_DOWN:
+            case 's':
                 if (getDirection() != down) {
                     setDirection(down);
 
@@ -472,6 +533,41 @@ void Tunnelman::doSomething() {
                 setDirection(down);
                 if (notPastBoundary(KEY_PRESS_DOWN)) {
                     moveTo(getX(), getY() - 1);
+                }
+
+                break;
+            case KEY_PRESS_SPACE:
+                if (inventory[1] > 0) {
+                    getWorld()->playSound(SOUND_PLAYER_SQUIRT);
+
+                    switch (getDirection()) {
+                    case left:
+                        if (!getWorld()->isEarth(getX() - 1, getY(), "Squirt") &&
+                            !getWorld()->isBoulder(getX() - 4, getY(), left)) {
+                            getWorld()->squirtGun(new Squirt(getX(), getY(), getDirection(), getWorld()));
+                        }
+                        break;
+                    case right:
+                        if (!getWorld()->isEarth(getX() + 4, getY(), "Squirt") && 
+                            !getWorld()->isBoulder(getX() + 4, getY(), right)) {
+                            getWorld()->squirtGun(new Squirt(getX(), getY(), getDirection(), getWorld()));
+                        }
+                        break;
+                    case up:
+                        if (!getWorld()->isEarth(getX(), getY() + 4, "Squirt") && 
+                            !getWorld()->isBoulder(getX(), getY() + 4, up)) {
+                            getWorld()->squirtGun(new Squirt(getX(), getY(), getDirection(), getWorld()));
+                        }
+                        break;
+                    case down:
+                        if (!getWorld()->isEarth(getX(), getY() - 1, "Squirt") &&
+                            !getWorld()->isBoulder(getX(), getY() - 1, left)) {
+                            getWorld()->squirtGun(new Squirt(getX(), getY(), getDirection(), getWorld()));
+                        }
+                        break;
+                    }
+
+                    decrementInventoryCount(1);
                 }
 
                 break;
@@ -514,25 +610,26 @@ void Tunnelman::doSomething() {
 bool Tunnelman::notPastBoundary(int ch) {
     switch (ch) {
     case KEY_PRESS_LEFT:
-        if (getX() - 1 < 0) {
+        // If: It is not within the boundary or the next space is not a boulder
+        if (getX() - 1 < 0 || getWorld()->isBoulder(getX() - 4, getY(), left)) {
             return false;
         }
 
         break;
     case KEY_PRESS_RIGHT:
-        if (getX() + 1 > 60) {
+        if (getX() + 1 > 60 || getWorld()->isBoulder(getX() + 4, getY(), right)) {
             return false;
         }
 
         break;
     case KEY_PRESS_UP:
-        if (getY() + 1 > 60) {
+        if (getY() + 1 > 60 || getWorld()->isBoulder(getX(), getY() + 4, up)) {
             return false;
         }
 
         break;
     case KEY_PRESS_DOWN:
-        if (getY() - 1 < 0) {
+        if (getY() - 1 < 0 || getWorld()->isBoulder(getX(), getY() - 4, down)) {
             return false;
         }
 
@@ -582,15 +679,23 @@ Tunnelman::~Tunnelman() {}
 Protestor Class
 ****************************************/
 //Default Constructor
-Protestor::Protestor(StudentWorld* tempWorld) : Humanoid(TID_PROTESTER, 60, 60, left, 1.0, 0, tempWorld) {
-    hitPoints = 5;
+Protester::Protester(StudentWorld* tempWorld, int ID) : Humanoid(ID, 60, 60, left, 1.0, 0, tempWorld) {
+    setHitPoints(5);
     leaveTheOil = false; //not in the oil field leave state
     current_level_number = getWorld()->getLevel(); //gets current level using getLevel game world function
     ticksToWait = max(0, 3 - current_level_number / 4); //formula found in pdf
     numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
 }
 
-void Protestor::doSomething() {
+string Protester::objectType() {
+    return "Protester";
+}
+
+void Protester::setLeave() {
+    leaveTheOil = true;
+}
+
+void Protester::doSomething() {
     int xPro = getX();
     int yPro = getY();
     int xTMan = getWorld()->getActorObjectX("Tunnelman");
@@ -598,6 +703,9 @@ void Protestor::doSomething() {
     int tDistanceX = xPro - xTMan;
     int tDistanceY = yPro - yTMan;
     Direction dir = getDirection();
+
+
+
 
     if (isDead()) { //if dead return immediately
         return;
@@ -618,31 +726,51 @@ void Protestor::doSomething() {
     }
     shoutTicks++;
     perpTurnTicks++;
+    //cout << "perpTurnTicks " << perpTurnTicks << endl;
     if (xPro == 3) {
         //stuck in top left corner
         moveTo(xPro + 1, yPro);
         setDirection(right);
         return;
     }
+    if (xPro == 60 && leaveTheOil == false) {
+        //stuck in top left corner
+        moveTo(xPro - 1, yPro);
+        setDirection(left);
+        return;
+    }
+
+    if (yPro == 61) {
+        moveTo(xPro, yPro - 1);
+        setDirection(down);
+        return;
+    }
+    if (yPro == 0) {
+        moveTo(xPro, yPro + 1);
+        setDirection(up);
+        return;
+    }
+
 
     if (leaveTheOil == true) { //leave the oil phase
         if (getX() == 60 && getY() == 60) { //at the exit point and can therefore leave
             setDead(); //set status to dead
         }
-        //            else{
-        //                //TODO: breadth first search to find the exit
-        //            }
+        else {
+            getWorld()->exit(this, xPro, yPro, "exit"); //calls function to move the protester one step closer to the exit every round
+            return;
+        }
     }
     else { //not trying to leave and all interactions with tunnelman
         //if i can see tunnelman
         //cout << "TDISTNAC " << tDistanceX << endl;
-        if ((abs(tDistanceX) == 4) || (abs(tDistanceY) == 4)) { //checks for a distance of 4 and facing direction of tMan
+        if (radiusCheck(xPro, yPro, xTMan, yTMan, 4)) { //checks for a distance of 4 and facing direction of tMan
             //cout << "test " << endl;
             if (facingDirection(xPro, yPro, xTMan, yTMan, dir)) {
                 if (shoutTicks > 15) { //if 15 non resting ticks has passed and hasn't shouted yet TODO: keep track of the shouting
                     getWorld()->playSound(SOUND_PROTESTER_YELL); //yell at tunnelman
                     //TODO: deduct two hit points from tunnelman
-                    getWorld()->dealDmg(-2, "Tunnelman");
+                    getWorld()->dealDmg(0, 0, -2, "Tunnelman");
                     //cout << "YELLING AT TUNNELMAN " << endl;
                     shoutTicks = 0; //can't shout again for another 15 non resting ticks
                     return;
@@ -653,13 +781,22 @@ void Protestor::doSomething() {
                 return;
             }
         }
-        //step 5
-        else if (getX() == getWorld()->getActorObjectX("Tunnelman") && (abs(tDistanceY) > 4)) { //same column but distance > 4
+        if (getID() == TID_HARD_CORE_PROTESTER && (tDistanceX > 4 || tDistanceY > 4)) { //for hardcore protesters that are more than 4 units away from the tunnelman
+            int M = 16 + static_cast<int>(current_level_number * 20);
+            if (tDistanceX <= M || tDistanceY <= M) { //If the Hardcore Protester is less than or equal to a total of M legal horizontal or vertical moves
+                getWorld()->exit(this, xPro, yPro, "find"); //reuse the code but this time mark the tunnelman
+            }
+        }
+
+        //step 5 for regular protesters 
+        if (getX() == getWorld()->getActorObjectX("Tunnelman") && radiusCheck(xPro, yPro, xTMan, yTMan, 4)) { //same column but distance > 4
+            cout << "test" << endl;
             bool clearPath = true;
             if (yPro < yTMan) { //when distance is negative tunnelman is above
-                for (int i = 0; i < abs(tDistanceY); i++) { //checks the path from protestor to tunnelman
-                    if (earthBoulderCheck(xPro, yPro + i)) { //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                for (int i = 0; i < abs(tDistanceY); i++) { //checks the path from protester to tunnelman
+                    if (earthBoulderCheck(xPro, yPro + i)) { //checks if there are earth or boulders in the way, hit box would be one, bc protester doesn't get damaged from to
                         clearPath = false;
+                        numSquares = 0;
                     }
                 }
                 if (clearPath == true) {
@@ -669,24 +806,29 @@ void Protestor::doSomething() {
             }
             else if (yPro > yTMan) { //tunnelman is below
                 for (int i = 0; i < abs(tDistanceY); i++) { //checks the path from tunnelman to protester
-                    if (earthBoulderCheck(xPro, yPro - i)) { //checks if there are earth or boulders in the way, hit box would be one, bc protestor doesn't get damaged from to
+                    if (earthBoulderCheck(xPro, yPro - i)) { //checks if there are earth or boulders in the way, hit box would be one, bc protester doesn't get damaged from to
                         clearPath = false;
+                        numSquares = 0;
+
                     }
                 }
                 if (clearPath == true) {
+                    //cout << "test" << endl;
                     setDirection(down);
                     moveTo(xPro, yPro - 1); //takes a step towards him downwards
                 }
             }
+            cout << "test" << endl;
             numSquares = 0;
             return;
         }
-        else if (getY() == getWorld()->getActorObjectY("Tunnelman") && (abs(tDistanceX) > 4)) { //same row but distance > 4
+        if (getY() == getWorld()->getActorObjectY("Tunnelman") && radiusCheck(xPro, yPro, xTMan, yTMan, 4)) { //same row but distance > 4
             bool clearPath = true;
             if (xPro < xTMan) { //when distance is negative tunnelman is to the right
-                for (int i = 0; i < abs(tDistanceX); i++) { //checks the path from protestor to tunnelman
+                for (int i = 0; i < abs(tDistanceX); i++) { //checks the path from protester to tunnelman
                     if (earthBoulderCheck(xPro + i, yPro) == false) { //checks if there is earth or a boulder in the way
                         clearPath = false; //if there is stuff in the way, clearPath is false
+                        numSquares = 0;
                     }
                 }
                 if (clearPath == true) {
@@ -698,6 +840,7 @@ void Protestor::doSomething() {
                 for (int i = 0; i < abs(tDistanceX); i++) { //checks the path from tunnelman to protester
                     if (earthBoulderCheck(xPro - i, yPro) == false) {
                         clearPath = false;
+                        numSquares = 0;
                     }
                 }
 
@@ -709,84 +852,83 @@ void Protestor::doSomething() {
             numSquares = 0;
             return;
         }
+        numSquares = numSquares - 1;
         //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
-        else {
-            numSquares = numSquares - 1;
+        if (numSquares <= 0) {
 
             //step 7
             bool clear = false;
             //cout << "NUM SQUARES " << numSquares << endl;
-            if (numSquares <= 0) { //when the reg pro has finished walking numSquares
-                while (clear == false) {
-                    Direction randomDir = randomDirection(); //chooses random direction
-                    //checks if the direction is clear
-                    if (randomDir == up && earthBoulderCheck(xPro, yPro + 1)) {
+            while (clear == false) {
+                Direction randomDir = randomDirection(); //chooses random direction
+                //checks if the direction is clear
+                if (randomDir == up && earthBoulderCheck(xPro, yPro + 1) && notPastBoundary(up)) {
+                    setDirection(up);
+                    clear = true;
+                }
+                else if (randomDir == down && earthBoulderCheck(xPro, yPro - 1) && notPastBoundary(down)) {
+                    setDirection(down);
+                    clear = true;
+                }
+                else if (randomDir == right && earthBoulderCheck(xPro + 1, yPro) && notPastBoundary(right)) {
+                    setDirection(right);
+                    clear = true;
+                }
+                else if (randomDir == left && earthBoulderCheck(xPro - 1, yPro) && notPastBoundary(left)) {
+                    setDirection(left);
+                    clear = true;
+                }
+                perpTurnTicks = 0; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+            }
+            numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
+        }
+        //step 7
+        else if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro, left)) {//checks if it is in an intersection
+            //cout << "intersection" << endl;
+            //cout << "at an intersection " << perpTurnTicks << endl;
+            if (perpTurnTicks > 200) {
+                if (dir == right) { //facing right/left, perp directions: down and up
+                    if (moveInDirection(xPro, yPro + 1, up)) { //if there is not an actor to the left
                         setDirection(up);
-                        clear = true;
                     }
-                    else if (randomDir == down && earthBoulderCheck(xPro, yPro - 1)) {
+                    else if (moveInDirection(xPro, yPro - 1, down)) {
                         setDirection(down);
-                        clear = true;
                     }
-                    else if (randomDir == right && earthBoulderCheck(xPro + 1, yPro)) {
-                        setDirection(right);
-                        clear = true;
-
+                    perpTurnTicks = 0;
+                }
+                if (dir == left) { //facing right/left, perp directions: down and up
+                    if (moveInDirection(xPro, yPro - 1, down)) { //if there is not an actor to the left
+                        setDirection(down);
                     }
-                    else if (randomDir == left && earthBoulderCheck(xPro - 1, yPro)) {
+                    else if (moveInDirection(xPro, yPro + 1, up)) {
+                        setDirection(up);
+                    }
+                    perpTurnTicks = 0;
+                }
+                if (dir == up) { //facing up/down, perp directions: left and right
+                    if (moveInDirection(xPro - 1, yPro, left)) { //if there is not an actor to the left
                         setDirection(left);
-                        clear = true;
                     }
-                    perpTurnTicks = 0; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
+                    else if (moveInDirection(xPro + 1, yPro, right)) {
+                        setDirection(right);
+                    }
+                    perpTurnTicks = 0;
                 }
-                numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
-            }
-            //step 7
-            else if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro, left)) {//checks if it is in an intersection
-                //cout << "intersection" << endl;
-                if (perpTurnTicks > 200) {
-                    if (dir == up) { //facing up/down, perp directions: left and right
-                        if (earthBoulderCheck(xPro - 1, yPro)) { //if there is not an actor to the left
-                            setDirection(left);
-                        }
-                        else if (earthBoulderCheck(xPro + 1, yPro)) {
-                            setDirection(right);
-                        }
-                        perpTurn = 0;
+                else if (dir == down) { //facing up/down, perp directions: left and right
+                    cout << "DOWN" << endl;
+                    if (moveInDirection(xPro + 1, yPro, right)) { //if there is not an actor to the left
+                        setDirection(right);
                     }
-                    else if (dir == down) { //facing up/down, perp directions: left and right
-                        cout << "DOWN" << endl;
-                        if (earthBoulderCheck(xPro + 1, yPro)) { //if there is not an actor to the left
-                            setDirection(right);
-                        }
-                        else if (earthBoulderCheck(xPro - 1, yPro)) {
-                            setDirection(left);
-                        }
-                        perpTurn = 0;
+                    else if (moveInDirection(xPro - 1, yPro, left)) {
+                        setDirection(left);
                     }
-                    else if (dir == right) { //facing right/left, perp directions: down and up
-                        if (earthBoulderCheck(xPro, yPro + 1)) { //if there is not an actor to the left
-                            setDirection(up);
-                        }
-                        else if (earthBoulderCheck(xPro, yPro - 1)) {
-                            setDirection(down);
-                        }
-                        perpTurn = 0;
-                    }
-                    else if (dir == left) { //facing right/left, perp directions: down and up
-                        if (earthBoulderCheck(xPro, yPro - 1)) { //if there is not an actor to the left
-                            setDirection(down);
-                        }
-                        else if (earthBoulderCheck(xPro, yPro + 1)) {
-                            setDirection(up);
-                        }
-                        perpTurnTicks = 0;
-                    }
-                    else {
-                        //cout << "REALLY BAD FOR STEP 7" << endl;
-                    }
+                    perpTurnTicks = 0;
                 }
+
             }
+            numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
+
+
         }
 
     }
@@ -796,17 +938,11 @@ void Protestor::doSomething() {
         if (moveInDirection(xPro, yPro, up) && notPastBoundary(up)) {
             moveTo(xPro, yPro + 1);
         }
-        else {
-            setDirection(down);
-        }
         break;
     }
     case down: {
         if (moveInDirection(xPro, yPro, down) && notPastBoundary(down)) {
             moveTo(xPro, yPro - 1);
-        }
-        else {
-            setDirection(up);
         }
         break;
     }
@@ -814,15 +950,10 @@ void Protestor::doSomething() {
         if (moveInDirection(xPro, yPro, right) && notPastBoundary(right)) {
             moveTo(xPro + 1, yPro);
         }
-        else {
-            cout << "ALL THE WAY IN THE TOP RIGHT CORNER " << endl;
-            setDirection(left);
-        }
         break;
     }
     case left: {
         if (xPro == 3) {
-            cout << "ALL THE WAY IN THE TOP LEFT CORNER " << endl;
             setDirection(right);
             break;
         }
@@ -838,15 +969,15 @@ void Protestor::doSomething() {
     }
 
     //step 9
-    if (!moveInDirection(xPro, yPro, dir)) { //if protestor cannot move in the direction it is facing
+    if (!moveInDirection(xPro, yPro, dir)) { //if protester cannot move in the direction it is facing
         numSquares = 0; //force it to choose a new direction
     }
 
 }
 
-//uses studentWorld hitbox function to check earth and boulder at the same time for protestor
-bool Protestor::earthBoulderCheck(int x, int y) {
-    //actor hitbox call made specifically for protestor and searching for earth and boulder
+//uses studentWorld hitbox function to check earth and boulder at the same time for protester
+bool Protester::earthBoulderCheck(int x, int y) {
+    //actor hitbox call made specifically for protester and searching for earth and boulder
     if (getWorld()->actorsInObjectHitBox(x, y, 0, 0, "Boulder") == 0) {
         return false; //returns false if there is earth or boulder there
     }
@@ -857,7 +988,7 @@ bool Protestor::earthBoulderCheck(int x, int y) {
     return true;
 }
 
-Actor::Direction Protestor::randomDirection() //returns a random direction
+Actor::Direction Protester::randomDirection() //returns a random direction
 {
     int randomNumber = rand() % 4; //4 random directions possible
     switch (randomNumber)
@@ -882,7 +1013,7 @@ Actor::Direction Protestor::randomDirection() //returns a random direction
     return none;
 }
 
-bool Protestor::moveInDirection(int x, int y, Direction dir) {
+bool Protester::moveInDirection(int x, int y, Direction dir) {
     switch (dir) {
     case up: {
         return earthBoulderCheck(x, y + 1); //will return false if you can't move up bc there is either earth or boulder there
@@ -908,7 +1039,7 @@ bool Protestor::moveInDirection(int x, int y, Direction dir) {
     return none;
 }
 
-bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
+bool Protester::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
     switch (dir) {
     case up: {
         if (xP == xT && yP < yT) { //if the x same and yP is less than (under) tP than TRUE
@@ -930,7 +1061,6 @@ bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
     }
     case left: {
         if (xP > xT && yP == yT) {
-            //cout << "Facing tunnelman to the left " << endl;
             return true;
             break;
         }
@@ -944,5 +1074,47 @@ bool Protestor::facingDirection(int xP, int yP, int xT, int yT, Direction dir) {
     }
 }
 
+
+//SOURCE: https://stackoverflow.com/questions/27342362/how-to-create-a-circle-collision-detection-c/27342421
+bool Protester::radiusCheck(int xP, int yP, int xT, int yT, int radius) {
+    return ((xP - xT) * (xP - xT) + (yP - yT) * (yP - yT)) < radius * radius;
+}
+
+
+bool Protester::isAnnoyed(int dmg) {
+    if (leaveTheOil == true) {
+        return true;
+    }
+    //means he is annoyed
+    //getWorld()->dmgPro(); //temporary for testing
+    getWorld()->playSound(SOUND_PROTESTER_ANNOYED);
+    stun(); //stuns protester for a certain amt of time
+    if (getHitPoints() <= 0) {
+        getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+        leaveTheOil = true;
+        ticksToWait = 0;
+        return false;
+        //TODO: point system later
+    }
+}
+
+void Protester::stun() {
+    int N = max(50, 100 - static_cast<int>(getWorld()->getLevel() * 10));
+    ticksToWait = N; //makes the ticks to wait the same stun time 
+}
+
+
 //Destructor
-Protestor::~Protestor() {}
+Protester::~Protester() {}
+
+
+/****************************************
+Hardcore Protester Class
+****************************************/
+HardcoreProtester::HardcoreProtester(StudentWorld* tempWorld, int ID) : Protester(tempWorld, ID) {
+    setHitPoints(20);
+};
+
+string HardcoreProtester::objectType() {
+    return "HardcoreProtester";
+}

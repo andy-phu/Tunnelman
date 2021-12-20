@@ -2,12 +2,15 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <queue>
 #include <vector>
 #include "Actor.h"  // We use this in the .cpp file instead of .h file due to wanting the actual implementation of Actor.h
                     //  classes, member functions and the like to be imported into this file for actual use. Due to coding
                     //  actual implementation of classes and the likes of StudentWorld.h in this file. -- Note line 9 in 
                     //  StudentWorld.h for further explanation. --
 #include <memory>
+
+
 using namespace std;
 
 StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
@@ -18,7 +21,7 @@ StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
     // this gives the address of this StudentWorld object
     gWorld = this;
     tMan = nullptr;
-
+    ticks = 0;
     // Set all pointer objects to null so we avoid any errors, and fills in
     //  both the top and middle of our game grid
     for (int c = 0; c < 64; c++) {
@@ -29,9 +32,9 @@ StudentWorld::StudentWorld(string assetDir): GameWorld(assetDir){
 }
 
 int StudentWorld::init(){
+    ticks = 0;
     //tunnelman object getting placed in right spot
     tMan = new Tunnelman(this);
-
     /********************
     Place all earth blocks and tunnel shaft
     ********************/
@@ -110,22 +113,22 @@ int StudentWorld::init(){
 
 
     //// USE FOR TESTING BOULDERS ON BOULDERS
-    //vActors.push_back(new Boulder(35, 56, this));
+    //vActors.push_back(new Boulder(50, 30, this));
 
     //for (int i = 0; i < 4; i++) {
     //    for (int j = 0; j < 4; j++) {
-    //        removeEarth(35 + i, 56 + j);
+    //        removeEarth(50 + i, 30 + j);
     //        //removeEarth(randX + i, randY + j);
     //        //removeEarth(randX + i, randY + j);
     //        //removeEarth(randX + i, randY + j);
     //    }
     //}
 
-    //vActors.push_back(new Boulder(35, 30, this));
+    //vActors.push_back(new Boulder(10, 30, this));
 
     //for (int i = 0; i < 4; i++) {
     //    for (int j = 0; j < 4; j++) {
-    //        removeEarth(35 + i, 30 + j);
+    //        removeEarth(10 + i, 30 + j);
     //        //removeEarth(randX + i, randY + j);
     //        //removeEarth(randX + i, randY + j);
     //        //removeEarth(randX + i, randY + j);
@@ -143,17 +146,17 @@ int StudentWorld::init(){
     }
     
     /********************
-    Place first protestor in the very first tick of each level
+    Place first protester in the very first tick of each level
     ********************/
-    regPro = new Protestor(this);
+    regPro = new Protester(this, TID_PROTESTER);
     vActors.push_back(regPro);
-    int T = max(25, 200 - level);
-
-
+   
+   
     return GWSTATUS_CONTINUE_GAME;
 }
 
 int StudentWorld::move(){
+    int P = min(15, static_cast<int>(2 + level * 1.5));
     // UPDATE THE GAME STATUS LINE //
 
     // update the display text first as this also updates many of the private variables that the logic below
@@ -204,6 +207,11 @@ int StudentWorld::move(){
         playSound(SOUND_FINISHED_LEVEL);
         return GWSTATUS_FINISHED_LEVEL;
     }
+
+    //for protester spawning 
+    addingProtester();
+    
+
 
     // THE PLAYER HASN'T COMPLETED THE CURRENT LEVEL AND HASN'T DIED
     //  LET THEM CONTINUE PLAYING THE CURRENT LEVEL
@@ -280,9 +288,14 @@ bool StudentWorld::playerDiedDuringThisTick() {
     return false;
 }
 
+void StudentWorld::squirtGun(Actor* actorObject) {
+    vActors.push_back(actorObject);
+}
+
 void StudentWorld::placeGoldNuggets(int startX, int startY, int state, StudentWorld* tempWorld) {
     vActors.push_back(new GoldNugget(startX, startY, state, tempWorld));
 }
+
 
 // Utilized for digging in Tunnelman logic
 void StudentWorld::digEarth(int x, int y) {
@@ -344,35 +357,57 @@ void StudentWorld::removeEarth(int x, int y) {
     }
 }
 
-bool StudentWorld::isEarth(int x, int y) {
-    // Check four squares of earth
-    for (int i = 0; i < 4; i++) {
-        // Returns true if any of the one squares below are earth blocks
-        if (earthObjects[x + i][y] != nullptr) {
+bool StudentWorld::isEarth(int x, int y, string objectType) {
+    // For squirt object when it is looking to see if it's starting on or moving into
+    //  an earth object
+    if (objectType == "Squirt") {
+        if (earthObjects[x][y] != nullptr) {
             return true;
         }
     }
+    // For boulder to check if there is earth anywhere beneath it
+    else if (objectType == "Boulder") {
+        // Check 4 blocks of earth beneath object
+        for (int i = 0; i < 4; i++) {
+            // Returns true if any of the one squares below are earth blocks
+            if (earthObjects[x + i][y] != nullptr) {
+                return true;
+            }
+        }
+    }
 
-    // Returns false if all earth blocks below are no longer there
+    // Returns false if neither of the above (and it's logic) aren't true 
     return false;
 }
 
-bool StudentWorld::isBoulder(int x, int y) {
+// up == 1, down == 2, left == 3, right == 4
+bool StudentWorld::isBoulder(int x, int y, int dir) {
     for (int i = 0; i < vActors.size(); i++) {
-        // If it is a boulder check the four squares
         if (vActors[i]->objectType() == "Boulder") {
-            for (int j = 0; j < 4; j++) {
-                int leftX = vActors[i]->getX() + j;
-                // If it is a boulder with the same coordinates
-                if (leftX == x && vActors[i]->getY() == y) {
-                    return true;
+            switch (dir) {
+            case 4: // Right
+            case 3: // Left
+                // Account for full height of boulder
+                // This is able to account for both left and right due to passing in modified getX() and getY()
+                //  from Squirt's doSomething, thus we don't have to modify values here
+                for (int j = 0; j < 4; j++) {
+                    if (x == vActors[i]->getX() && (y == vActors[i]->getY() + j || y == vActors[i]->getY() - j)) {
+                        return true;
+                    }
                 }
 
-                int rightX = vActors[i]->getX() - j;
-                // if it is a boulder with the same coordines
-                if (rightX == x && vActors[i]->getY() == y) {
-                    return true;
+                break;
+            case 1: // Up
+            case 2: // Down
+                // Account for width of boulder
+                for (int j = 0; j < 4; j++) {
+                    if ((x == vActors[i]->getX() + j || x == vActors[i]->getX() - j) && y == vActors[i]->getY()) {
+                        return true;
+                    }
                 }
+
+
+                break;
             }
         }
     }
@@ -404,7 +439,7 @@ int StudentWorld::actorsInObjectHitBox(int x, int y, int xHitBox, int yHitBox, s
         }
     }
 
-    // Made specifically for protestor
+    // Made specifically for protester
     // Will be called with xHitBox == 0 and yHitBox == 0 with boulder as obj type
     if (xHitBox == 0 && yHitBox == 0 && objectType == "Boulder") {
         for (int i = 0; i < vActors.size(); i++) {
@@ -447,6 +482,37 @@ int StudentWorld::actorsInObjectHitBox(int x, int y, int xHitBox, int yHitBox, s
     return vActorPos;
 }
 
+bool StudentWorld::splashProtestors(int x, int y) {
+    vector<Actor*> ::iterator it; 
+    bool hit = false;
+    it = vActors.begin();
+
+    // Look through every object in actor to ensure we splash every protestor/hardcore protestor
+    while (it != vActors.end()) {
+        // Look for hardcore/reg protestors
+        if ((*it)->objectType() == "Protester" || (*it)->objectType() == "HardcoreProtestor") {
+            // If we're within their hitbox
+            if (abs(x - (*it)->getX()) <= 3 && abs(y - (*it)->getY()) <= 3) {
+                // The protestor has zero health, thus they are annoyed
+                (*it)->isAnnoyed();
+                 
+                // splash them
+                (*it)->setHitPoints(-2);
+
+                if ((*it)->getHitPoints() <= 0) {
+                    increaseScore(100);
+                }
+                // We have splattered the water on them and no longer will travel farther
+                hit = true;
+            }
+        }
+
+        it++;
+    }
+    
+    return hit;
+}
+
 int StudentWorld::numActorObject(string objectType) {
     int count = 0;
 
@@ -466,14 +532,30 @@ void StudentWorld::inventoryUpdate(int item) {
     tMan->incrementInventoryCount(item);
 }
 
-
-void StudentWorld::dealDmg(int dmg, string objectType) {
+void StudentWorld::dealDmg(int x, int y, int dmg, string objectType) { //put x and y 0 for tunnelman dmg
     if (objectType == "Tunnelman") {
         tMan->setHitPoints(dmg);
     }
-    //else if (objectType == "Protestor") {
+}
 
-    //}
+
+void StudentWorld::addingProtester() {
+    int T = max(25, 200 - level);
+    int P = min(15, static_cast <int>(2 + level * 1.5));
+    int probabilityOfHardcore = min(90, static_cast<int>(level * 10) + 10);
+    int hardcoreRand = random(0, probabilityOfHardcore, 'r');
+    if (ticks > T && (numActorObject("Protester") + numActorObject("HardcoreProtester")) < P) {
+        if (hardcoreRand == probabilityOfHardcore) { //the 1 in a probabilityOfHardcore chance
+            cout << " random: " << hardcoreRand << " end: " << probabilityOfHardcore << endl;
+            hardPro = new HardcoreProtester(this, TID_HARD_CORE_PROTESTER);
+            vActors.push_back(hardPro);
+        }
+        cout << " random: " << hardcoreRand << " end: " << probabilityOfHardcore << endl;
+        regPro = new Protester(this, TID_PROTESTER);
+        vActors.push_back(regPro);
+        ticks = 0;
+    }
+    ticks++;
 }
 
 void StudentWorld::updateDisplayText() {
@@ -500,12 +582,74 @@ void StudentWorld::updateDisplayText() {
     displayText << "  Sonar: " << setw(2) << sonar;
     displayText << "  Scr: " << setfill('0') << setw(6) << score;
 
-    //// The below code is for debugging purposes:
+    // The below code is for debugging purposes:
     //displayText << "X: " << tMan->getX();
     //displayText << " Y: " << tMan->getY();
 
     setGameStatText(displayText.str());
 }
+
+//Reference: https://www.daniweb.com/programming/software-development/threads/438384/solving-a-maze-with-queues
+void StudentWorld::exit(Protester* pro, int proX, int proY, string s)
+{
+
+    for (int x = 0; x < 64; x++)
+    {
+        for (int y = 0; y < 64; y++)
+        {
+            map[x][y] = 0;  //fill the map with all 0's in the beginning, to create the map in a sense 
+        }
+    }
+
+    queue<grid> qGrid;
+    if (s == "exit") {  //marks teh actual exit
+        qGrid.push(grid(60, 60));   // This is the exit point
+        map[60][60] = 1;    //exit
+    }
+    else if (s == "find") { //marks tunnelmans location as the exit
+        int xT = getActorObjectX("Tunnelman");
+        int yT = getActorObjectY("Tunnelman");
+        qGrid.push(grid(xT, yT));   //this is the exit point
+        map[xT][yT] = 1;    //the goal
+    }
+
+    while (!qGrid.empty()) //iterates till the queue is empty and looks at all directions for an open spot
+    {
+        grid anotherQGrid = qGrid.front(); //the first one will be the exit point 60,60 
+        qGrid.pop();
+        int x = anotherQGrid.x; //x and y are the coordinates of the exit 
+        int y = anotherQGrid.y;
+
+        if (map[x][y + 1] == 0 && pro->moveInDirection(x, y, GraphObject::up)) //while checking if there is a spot there, it also checks if the protester can move in each direction
+        {
+            map[x][y + 1] = 1 + map[x][y]; //flags the spot if open, similar to a breadcrumb
+            qGrid.push(grid(x, y + 1)); //the moveable spots get pushed into the grid which eventually get into the anotherGrid which is then used to show the protester where to move
+        }
+
+        if (map[x][y - 1] == 0 && pro->moveInDirection(x, y, GraphObject::down))
+        {
+            map[x][y - 1] = 1 + map[x][y];
+            qGrid.push(grid(x, y - 1));
+        }
+
+        if (map[x + 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::right))
+        {
+            map[x + 1][y] = 1 + map[x][y];
+            qGrid.push(grid(x + 1, y));
+        }
+
+        if (map[x - 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::left))
+        {
+            map[x - 1][y] = 1 + map[x][y];
+            qGrid.push(grid(x - 1, y));
+        }
+    }
+    proMove(proX, proY, pro); //protester follows its map
+    return;
+
+}
+
+
 
 GameWorld* StudentWorld::getWorld(){
     return gWorld;
@@ -554,4 +698,29 @@ int StudentWorld::random(int min, int max, char xOrY) {
     return min + rand() % ((max + 1) - min);
 }
 
-// Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp
+//part where the protester actually moves through the open spots
+void StudentWorld::proMove(int x, int y, Protester* pro) {
+    if (pro->moveInDirection(x, y, GraphObject::right) && map[x + 1][y] < map[x][y]) //checks once again if there are obstacles in the path and checks to see if the spot the protester wants to move is less than the current spot it is on 
+    {
+        pro->moveTo(x + 1, y); //moves right
+        pro->setDirection(GraphObject::right);
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::up) && map[x][y + 1] < map[x][y])
+    {
+        pro->moveTo(x, y + 1); //moves up
+        pro->setDirection(GraphObject::up);
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::left) && map[x - 1][y] < map[x][y])
+    {
+        pro->moveTo(x - 1, y); //moves left 
+        pro->setDirection(GraphObject::left);
+    }
+
+    if (pro->moveInDirection(x, y, GraphObject::down) && map[x][y - 1] < map[x][y])
+    {
+        pro->moveTo(x, y - 1); //moves down
+        pro->setDirection(GraphObject::down);
+    }
+}

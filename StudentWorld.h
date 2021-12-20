@@ -14,7 +14,10 @@ class Tunnelman;    // Here we only use class forwarding as we don't actually co
 class Earth;
 class Actor;
 class Boulder;
-class Protestor;
+class Protester;
+class HardcoreProtestor;
+
+//enum Direction;
 
 class StudentWorld : public GameWorld
 {
@@ -36,33 +39,43 @@ public:
     
     bool playerDiedDuringThisTick();
 
+    void squirtGun(Actor*);
+
     void placeGoldNuggets(int, int, int, StudentWorld*);
 
     void digEarth(int, int);
 
     void sonarPing(int, int);
 
+    void addingProtester();
+
     virtual void removeEarth(int, int);
 
-    bool isEarth(int, int);
+    bool isEarth(int, int, std::string);
 
-    bool isBoulder(int, int);
+    bool isBoulder(int, int, int);
 
     virtual int getActorObjectX(std::string);
 
     virtual int getActorObjectY(std::string);
 
     int actorsInObjectHitBox(int, int, int, int, std::string);
+    
+    bool splashProtestors(int, int);
 
     virtual int numActorObject(std::string);
 
     virtual void inventoryUpdate(int);
 
-    void dealDmg(int, std::string);
+    void dealDmg(int, int, int, std::string);
 
     virtual void updateDisplayText();
 
     virtual int random(int, int, char);
+
+    void exit(Protester*, int, int, std::string);
+
+    void proMove(int, int, Protester*);
 
     // Destructor
     ~StudentWorld();
@@ -72,10 +85,11 @@ private:
     Earth* earthObjects[64][64];
     GameWorld* gWorld;
     Boulder* boulder;
-    Protestor* regPro;
+    Protester* regPro;
+    HardcoreProtester* hardPro;
 
+    int ticks;
     int currLife;
-    int T;
     int level;
     int lives;
     int health;
@@ -85,10 +99,21 @@ private:
     int sonar;
     int score;
 
+    //for maze solver
+    int map[64][64];
+
+    struct grid
+    {
+        int x;
+        int y;
+        grid(int col, int row){
+            x = col;
+            y = row;
+        }
+    };
+
     // Keeps track of all actor pointers
     std::vector<Actor*> vActors;
-
-    int ticks = 0;
 };
 
 #endif // STUDENTWORLD_H_
