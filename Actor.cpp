@@ -636,6 +636,7 @@ void Protester::doSomething() {
     }
     shoutTicks++;
     perpTurnTicks++;
+    cout << "perpTurnTicks " << perpTurnTicks << endl;
     if (xPro == 3) {
         //stuck in top left corner
         moveTo(xPro + 1, yPro);
@@ -649,9 +650,14 @@ void Protester::doSomething() {
         return;
     }
 
-    if (yPro >= 64) {
+    if (yPro == 61) {
         moveTo(xPro, yPro - 1);
         setDirection(down);
+        return;
+    }
+    if (yPro == 0) {
+        moveTo(xPro, yPro + 1);
+        setDirection(up);
         return;
     }
 
@@ -749,7 +755,6 @@ void Protester::doSomething() {
             numSquares = 0;
             return;
         }
-        cout << "num square " << numSquares << endl;
         numSquares = numSquares - 1;
         //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
         if(numSquares <= 0){
@@ -779,30 +784,54 @@ void Protester::doSomething() {
                 perpTurnTicks = 0; //when a perpendicular turn has been made, make sure it is not made again until 200 ticks has gone by
             }
             numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
-            //step 7
-            if (atIntersection(perpTurnTicks, dir)) {
-                cout << "at an intersection" << endl;
-                if (dir == right || dir == left) { //facing right/left, perp directions: down and up
-                    if (!moveInDirection(xPro, yPro + 1, up)) { //if there is not an actor to the right
+        }
+        //step 7
+        else if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro, left)) {//checks if it is in an intersection
+            //cout << "intersection" << endl;
+            //cout << "at an intersection " << perpTurnTicks << endl;
+            if (perpTurnTicks > 200) {
+                if (dir == right) { //facing right/left, perp directions: down and up
+                    if (moveInDirection(xPro, yPro + 1, up)) { //if there is not an actor to the left
+                        setDirection(up);
+                    }
+                    else if (moveInDirection(xPro, yPro - 1, down)) {
                         setDirection(down);
                     }
-                    else if (!moveInDirection(xPro, yPro - 1, down)) {
+                    perpTurnTicks = 0;
+                }
+                if (dir == left) { //facing right/left, perp directions: down and up
+                    if (moveInDirection(xPro, yPro - 1, down)) { //if there is not an actor to the left
+                        setDirection(down);
+                    }
+                    else if (moveInDirection(xPro, yPro + 1, up)) {
                         setDirection(up);
                     }
                     perpTurnTicks = 0;
                 }
-                else if(dir == up || dir == down) {
-                    if (!moveInDirection(xPro + 1, yPro, right)) {
+                if (dir == up) { //facing up/down, perp directions: left and right
+                    if (moveInDirection(xPro - 1, yPro, left)) { //if there is not an actor to the left
                         setDirection(left);
                     }
-                    else if (!moveInDirection(xPro - 1, yPro, left)) {
+                    else if (moveInDirection(xPro + 1, yPro, right)) {
                         setDirection(right);
                     }
                     perpTurnTicks = 0;
                 }
-                numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
-
+                else if (dir == down) { //facing up/down, perp directions: left and right
+                    cout << "DOWN" << endl;
+                    if (moveInDirection(xPro + 1, yPro, right)) { //if there is not an actor to the left
+                        setDirection(right);
+                    }
+                    else if (moveInDirection(xPro - 1, yPro, left)) {
+                        setDirection(left);
+                    }
+                    perpTurnTicks = 0;
+                }
+                
             }
+            numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
+
+        
         }
 
     }
@@ -812,26 +841,17 @@ void Protester::doSomething() {
         if (moveInDirection(xPro, yPro, up) && notPastBoundary(up)) {
             moveTo(xPro, yPro + 1);
         }
-        else {
-            setDirection(down);
-        }
         break;
     }
     case down: {
         if (moveInDirection(xPro, yPro, down) && notPastBoundary(down)) {
             moveTo(xPro, yPro - 1);
         }
-        else {
-            setDirection(up);
-        }
         break;
     }
     case right: {
         if (moveInDirection(xPro, yPro, right) && notPastBoundary(right)) {
             moveTo(xPro + 1, yPro);
-        }
-        else {
-            setDirection(left);
         }
         break;
     }
@@ -986,28 +1006,6 @@ void Protester::stun() {
     ticksToWait = N; //makes the ticks to wait the same stun time 
 }
 
-//checks if the protester at an intersection
-bool Protester::atIntersection(int perpTicks,Direction dir) {
-    int x = getX();
-    int y = getY();
-    if (perpTicks > 200) {
-        if (dir == up || dir == down) {
-            if (moveInDirection(x, y, right) || moveInDirection(x, y, left)) {
-                return true;
-            }
-            else {
-                return false; 
-            }
-        }
-    }
-    else {
-        if (moveInDirection(x, y, up) || moveInDirection(x, y, down)) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-}
+
 //Destructor
 Protester::~Protester() {}

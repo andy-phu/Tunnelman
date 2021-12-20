@@ -275,7 +275,6 @@ public:
 
     bool radiusCheck(int, int, int, int, int);
 
-    bool atIntersection(int, Direction);
 
     //virtual bool notPastBoundary(int);
 
