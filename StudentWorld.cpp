@@ -544,6 +544,58 @@ void StudentWorld::updateDisplayText() {
     setGameStatText(displayText.str());
 }
 
+//Reference: https://www.daniweb.com/programming/software-development/threads/438384/solving-a-maze-with-queues
+void StudentWorld::exit(Protester* pro, int proX, int proY)
+{
+
+    for (int x = 0; x < 64; x++)
+    {
+        for (int y = 0; y < 64; y++)
+        {
+            map[x][y] = 0;  //fill the map with all 0's in the beginning, to create the map in a sense 
+        }
+    }
+
+    queue<grid> qGrid;
+    qGrid.push(grid(60, 60)); //this is the exit point
+    map[60][60] = 1; //exit
+
+    while (!qGrid.empty()) //iterates till the queue is empty and looks at all directions for an open spot
+    {
+        grid anotherQGrid = qGrid.front(); //the first one will be the exit point 60,60 
+        qGrid.pop();
+        int x = anotherQGrid.x; //x and y are the coordinates of the exit 
+        int y = anotherQGrid.y;
+
+        if (map[x][y + 1] == 0 && pro->moveInDirection(x, y, GraphObject::up)) //while checking if there is a spot there, it also checks if the protester can move in each direction
+        {
+            map[x][y + 1] = 1 + map[x][y]; //flags the spot if open, similar to a breadcrumb
+            qGrid.push(grid(x, y + 1)); //the moveable spots get pushed into the grid which eventually get into the anotherGrid which is then used to show the protester where to move
+        }
+
+        if (map[x][y - 1] == 0 && pro->moveInDirection(x, y, GraphObject::down))
+        {
+            map[x][y - 1] = 1 + map[x][y];
+            qGrid.push(grid(x, y - 1));
+        }
+
+        if (map[x + 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::right))
+        {
+            map[x + 1][y] = 1 + map[x][y];
+            qGrid.push(grid(x + 1, y));
+        }
+
+        if (map[x - 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::left))
+        {
+            map[x - 1][y] = 1 + map[x][y];
+            qGrid.push(grid(x - 1, y));
+        }
+    }
+    proMove(proX, proY, pro); //protester follows its map
+    return;
+
+}
+
 GameWorld* StudentWorld::getWorld(){
     return gWorld;
 }
@@ -591,66 +643,11 @@ int StudentWorld::random(int min, int max, char xOrY) {
     return min + rand() % ((max + 1) - min);
 }
 
-void StudentWorld::exit(Protester* pro)
-{
-    //fill the map with all 0's in the beginning
-    for (int i = 0; i < 64; i++)
-    {
-        for (int j = 0; j < 64; j++)
-        {
-            map[i][j] = 0;
-        }
-    }
-
-    int proX = pro->getX();
-    int proY = pro->getY();
-
-    queue<grid> temp;
-    temp.push(grid(60, 60));
-    map[60][60] = 1; //exit
-
-    while (!temp.empty()) 
-    {
-        grid temp2 = temp.front(); 
-        temp.pop();
-        int x = temp2.x;
-        int y = temp2.y;
-
-        if (map[x + 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::right))
-        {
-            map[x + 1][y] = 1 + map[x][y];
-            temp.push(grid(x + 1, y)); 
-        }
-        
-        if (map[x - 1][y] == 0 && pro->moveInDirection(x, y, GraphObject::left))
-        {
-            map[x - 1][y] = 1 + map[x][y];
-            temp.push(grid(x - 1, y)); 
-        }
-       
-        if (map[x][y - 1] == 0 && pro->moveInDirection(x, y, GraphObject::down))
-        {
-            map[x][y - 1] = 1 + map[x][y];
-            temp.push(grid(x, y - 1));
-        }
-        
-        if (map[x][y + 1] == 0 && pro->moveInDirection(x, y, GraphObject::up))
-        {
-            map[x][y + 1] = 1 + map[x][y];
-            temp.push(grid(x, y + 1)); 
-        }
-
-    }
-
-    proMove(proX, proY, pro);
-
-    return;
-
-}
 
 
+//part where the protester actually moves through the open spots
 void StudentWorld::proMove(int x, int y, Protester* pro) {
-    if (pro->moveInDirection(x, y, GraphObject::right) && map[x + 1][y] < map[x][y])
+    if (pro->moveInDirection(x, y, GraphObject::right) && map[x + 1][y] < map[x][y]) //checks once again if there are obstacles in the path and checks to see if the spot the protester wants to move is less than the current spot it is on 
     {
         pro->moveTo(x + 1, y); //moves right
         pro->setDirection(GraphObject::right);

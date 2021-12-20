@@ -66,7 +66,7 @@ public:
 
     virtual int random(int, int, char);
 
-    void exit(Protester* pro);
+    void exit(Protester*, int, int);
 
     void proMove(int, int, Protester*);
 

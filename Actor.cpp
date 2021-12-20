@@ -657,13 +657,11 @@ void Protester::doSomething() {
 
 
     if (leaveTheOil == true) { //leave the oil phase
-        setDirection(right);
-        cout << "leave the oil " << leaveTheOil << endl;
         if (getX() == 60 && getY() == 60) { //at the exit point and can therefore leave
             setDead(); //set status to dead
         }
         else {
-            getWorld()->exit(this); //calls function to move the protester one step closer to the exit every round
+            getWorld()->exit(this, xPro, yPro); //calls function to move the protester one step closer to the exit every round
             return;
         }
     }
@@ -751,6 +749,7 @@ void Protester::doSomething() {
             numSquares = 0;
             return;
         }
+        cout << "num square " << numSquares << endl;
         numSquares = numSquares - 1;
         //step 6: Otherwise, the Regular Protester can’t directly see the Tunnelman
         if(numSquares <= 0){
@@ -781,50 +780,28 @@ void Protester::doSomething() {
             }
             numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
             //step 7
-            if (moveInDirection(xPro, yPro, up) && moveInDirection(xPro, yPro, down) && moveInDirection(xPro, yPro, right) && moveInDirection(xPro, yPro, left)) {//checks if it is in an intersection
-                //cout << "intersection" << endl;
-                if (perpTurnTicks > 200) {
-                    if (dir == up) { //facing up/down, perp directions: left and right
-                        if (earthBoulderCheck(xPro - 1, yPro)) { //if there is not an actor to the left
-                            setDirection(left);
-                        }
-                        else if (earthBoulderCheck(xPro + 1, yPro)) {
-                            setDirection(right);
-                        }
-                        perpTurn = 0;
+            if (atIntersection(perpTurnTicks, dir)) {
+                cout << "at an intersection" << endl;
+                if (dir == right || dir == left) { //facing right/left, perp directions: down and up
+                    if (!moveInDirection(xPro, yPro + 1, up)) { //if there is not an actor to the right
+                        setDirection(down);
                     }
-                    else if (dir == down) { //facing up/down, perp directions: left and right
-                        cout << "DOWN" << endl;
-                        if (earthBoulderCheck(xPro + 1, yPro)) { //if there is not an actor to the left
-                            setDirection(right);
-                        }
-                        else if (earthBoulderCheck(xPro - 1, yPro)) {
-                            setDirection(left);
-                        }
-                        perpTurn = 0;
+                    else if (!moveInDirection(xPro, yPro - 1, down)) {
+                        setDirection(up);
                     }
-                    else if (dir == right) { //facing right/left, perp directions: down and up
-                        if (earthBoulderCheck(xPro, yPro + 1)) { //if there is not an actor to the left
-                            setDirection(up);
-                        }
-                        else if (earthBoulderCheck(xPro, yPro - 1)) {
-                            setDirection(down);
-                        }
-                        perpTurn = 0;
-                    }
-                    else if (dir == left) { //facing right/left, perp directions: down and up
-                        if (earthBoulderCheck(xPro, yPro - 1)) { //if there is not an actor to the left
-                            setDirection(down);
-                        }
-                        else if (earthBoulderCheck(xPro, yPro + 1)) {
-                            setDirection(up);
-                        }
-                        perpTurnTicks = 0;
-                    }
-                    else {
-                        //cout << "REALLY BAD FOR STEP 7" << endl;
-                    }
+                    perpTurnTicks = 0;
                 }
+                else if(dir == up || dir == down) {
+                    if (!moveInDirection(xPro + 1, yPro, right)) {
+                        setDirection(left);
+                    }
+                    else if (!moveInDirection(xPro - 1, yPro, left)) {
+                        setDirection(right);
+                    }
+                    perpTurnTicks = 0;
+                }
+                numSquares = getWorld()->random(8, 60, 'n'); //random number btn 8 and 60
+
             }
         }
 
@@ -1009,5 +986,28 @@ void Protester::stun() {
     ticksToWait = N; //makes the ticks to wait the same stun time 
 }
 
+//checks if the protester at an intersection
+bool Protester::atIntersection(int perpTicks,Direction dir) {
+    int x = getX();
+    int y = getY();
+    if (perpTicks > 200) {
+        if (dir == up || dir == down) {
+            if (moveInDirection(x, y, right) || moveInDirection(x, y, left)) {
+                return true;
+            }
+            else {
+                return false; 
+            }
+        }
+    }
+    else {
+        if (moveInDirection(x, y, up) || moveInDirection(x, y, down)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
 //Destructor
 Protester::~Protester() {}
